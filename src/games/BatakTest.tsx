@@ -75,13 +75,13 @@ const BatakTest: React.FC<Props> = ({ onComplete }) => {
   const [targetIndex, setTargetIndex] = useState<number | null>(null);
   const [hits, setHits] = useState(0);
   const [misses, setMisses] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(30);
+  const [timeLeft, setTimeLeft] = useState(15);
   const [showSummary, setShowSummary] = useState(false);
   const [score, setScore] = useState(0);
   const [showMissFlash, setShowMissFlash] = useState(false);
   const [flashSpeed, setFlashSpeed] = useState(1000);
 
-  const totalTime = 30;
+  const totalTime = 15;
   const maxReactionTime = 2.5;
   const rows = 4;
   const cols = 4;
