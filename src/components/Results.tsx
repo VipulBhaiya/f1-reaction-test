@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ref, push } from 'firebase/database';
 import { db } from '../firebase';
 
 interface ResultsProps {
-  scores: number[]; // already normalized from individual tests
+  scores: number[];
   onRestart: () => void;
   onLeaderboard: () => void;
 }
@@ -11,18 +11,17 @@ interface ResultsProps {
 const Results: React.FC<ResultsProps> = ({ scores, onRestart, onLeaderboard }) => {
   const [name, setName] = useState('');
   const [submitted, setSubmitted] = useState(false);
-  const [scoreSaved, setScoreSaved] = useState(false);
 
   if (scores.length !== 3) return null;
 
   const finalScore = Math.round((scores[0] + scores[1] + scores[2]) / 3);
+  const submissionKey = `submitted_${finalScore}_${scores.join('_')}`;
 
-  let category = '';
-  if (finalScore >= 90) category = 'F1 Material';
-  else if (finalScore >= 75) category = 'F2 Prospect';
-  else if (finalScore >= 60) category = 'Semi-Pro';
-  else if (finalScore >= 45) category = 'Club Racer';
-  else category = 'Casual Fan';
+  useEffect(() => {
+    if (sessionStorage.getItem(submissionKey) === 'true') {
+      setSubmitted(true);
+    }
+  }, [submissionKey]);
 
   const saveScore = async () => {
     try {
@@ -36,56 +35,124 @@ const Results: React.FC<ResultsProps> = ({ scores, onRestart, onLeaderboard }) =
         lights: scores[2],
         timestamp: Date.now(),
       });
-      setScoreSaved(true);
       setSubmitted(true);
+      sessionStorage.setItem(submissionKey, 'true');
     } catch (err) {
       console.error('Error saving score:', err);
     }
   };
 
-  return (
-    <div style={{ textAlign: 'center', marginTop: '60px' }}>
-      <h1>🏁 Results</h1>
-      <p>Batak: {scores[0]}/100</p>
-      <p>Tennis: {scores[1]}/100</p>
-      <p>Lights: {scores[2]}/100</p>
-      <h2>Final Score: {finalScore}/100</h2>
-      <h2>Category: {category}</h2>
+  let category = '';
+  if (finalScore >= 90) category = 'F1 Material';
+  else if (finalScore >= 75) category = 'F2 Prospect';
+  else if (finalScore >= 60) category = 'Semi-Pro';
+  else if (finalScore >= 45) category = 'Club Racer';
+  else category = 'Casual Fan';
 
-      {!submitted && (
-        <div style={{ marginTop: '30px' }}>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Enter your name (optional)"
-            style={{
-              padding: '10px',
-              fontSize: '16px',
-              borderRadius: '8px',
-              width: '250px'
-            }}
-          />
-          <div>
-            <button onClick={saveScore} style={{ marginTop: '10px' }}>
+  return (
+    <div style={styles.wrapper}>
+      <div style={styles.container}>
+        <h1 style={styles.title}>🏁 Results</h1>
+        <div style={styles.scoreBox}>
+          <p>🟡 Batak: {scores[0]}/100</p>
+          <p>🎾 Tennis: {scores[1]}/100</p>
+          <p>💡 Lights: {scores[2]}/100</p>
+        </div>
+
+        <h2 style={styles.subheader}>Final Score: {finalScore}/100</h2>
+        <h2 style={styles.subheader}>Category: {category}</h2>
+
+        {!submitted ? (
+          <div style={styles.inputSection}>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Enter your name (optional)"
+              style={styles.input}
+            />
+            <button onClick={saveScore} style={styles.button}>
               Submit Score
             </button>
           </div>
+        ) : (
+          <p style={{ marginTop: '16px', fontWeight: 'bold', color: '#0f0' }}>
+            ✅ Score submitted!
+          </p>
+        )}
+
+        <div style={styles.buttonGroup}>
+          <button onClick={onRestart} style={styles.button}>Restart</button>
+          <button onClick={onLeaderboard} style={styles.button}>Leaderboard</button>
         </div>
-      )}
-
-      {submitted && (
-        <p style={{ marginTop: '20px', fontWeight: 'bold' }}>
-          ✅ Score submitted!
-        </p>
-      )}
-
-      <div style={{ marginTop: '20px' }}>
-        <button onClick={onRestart}>Restart</button>
-        <button onClick={onLeaderboard}>Leaderboard</button>
       </div>
     </div>
   );
+};
+
+const styles: { [key: string]: React.CSSProperties } = {
+  wrapper: {
+    backgroundColor: '#1c1c1c',
+    color: 'white',
+    width: '100vw',
+    height: '100vh',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  container: {
+    textAlign: 'center',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 12,
+    padding: '40px 24px',
+    borderRadius: '16px',
+    backgroundColor: '#2c2c2c',
+    boxShadow: '0 0 20px rgba(0,0,0,0.5)',
+  },
+  title: {
+    fontSize: '2.5rem',
+    marginBottom: 12,
+  },
+  scoreBox: {
+    fontSize: '1.2rem',
+    lineHeight: '1.8rem',
+    marginBottom: 16,
+  },
+  subheader: {
+    fontSize: '1.5rem',
+    margin: '8px 0',
+  },
+  inputSection: {
+    marginTop: 24,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 8,
+  },
+  input: {
+    padding: '10px',
+    fontSize: '1rem',
+    borderRadius: 10,
+    width: '260px',
+    border: '1px solid #ccc',
+  },
+  button: {
+    backgroundColor: '#ffc107',
+    color: '#000',
+    border: 'none',
+    padding: '10px 20px',
+    borderRadius: 10,
+    cursor: 'pointer',
+    fontWeight: 'bold',
+    fontSize: '1rem',
+  },
+  buttonGroup: {
+    marginTop: 30,
+    display: 'flex',
+    justifyContent: 'center',
+    gap: 12,
+  },
 };
 
 export default Results;

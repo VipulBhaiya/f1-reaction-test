@@ -6,6 +6,68 @@ type Props = {
   onComplete: (score: number) => void;
 };
 
+const styles: { [key: string]: React.CSSProperties } = {
+  container: {
+    height: '100vh',
+    width: '100vw',
+    backgroundColor: '#121212',
+    color: 'white',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontFamily: 'sans-serif',
+    textAlign: 'center',
+    gap: 12,
+  },
+  grid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(4, 1fr)',
+    gridTemplateRows: 'repeat(4, 1fr)',
+    gap: '16px',
+    zIndex: 1,
+  },
+  circleButton: {
+    borderRadius: '50%',
+    backgroundColor: '#555',
+    transition: 'all 0.2s ease',
+    cursor: 'pointer',
+  },
+  active: {
+    backgroundColor: '#ffc107',
+    boxShadow: '0 0 25px 8px rgba(255, 255, 0, 0.7)',
+  },
+  button: {
+    padding: '10px 20px',
+    fontSize: '1rem',
+    borderRadius: '10px',
+    border: 'none',
+    backgroundColor: '#ffc107',
+    cursor: 'pointer',
+  },
+  select: {
+    padding: '10px',
+    fontSize: '1rem',
+    borderRadius: 10,
+    backgroundColor: '#222',
+    color: 'white',
+    border: '1px solid #555',
+  },
+  flashOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100vw',
+    height: '100vh',
+    backgroundColor: 'rgba(255, 0, 0, 0.3)',
+    zIndex: 5,
+    pointerEvents: 'none',
+  },
+  header: {
+    marginBottom: 12,
+  },
+};
+
 const BatakTest: React.FC<Props> = ({ onComplete }) => {
   const [mode, setMode] = useState<Mode>('Classic');
   const [countdown, setCountdown] = useState<number | null>(null);
@@ -26,10 +88,6 @@ const BatakTest: React.FC<Props> = ({ onComplete }) => {
 
   const buttonSize = Math.min(window.innerWidth, window.innerHeight) / 7;
 
-  const hitSound = new Audio('/sounds/hit.mp3');
-  const missSound = new Audio('/sounds/miss.mp3');
-  const countdownSound = new Audio('/sounds/countdown.mp3');
-
   const handleStart = () => {
     setHits(0);
     setMisses(0);
@@ -38,18 +96,17 @@ const BatakTest: React.FC<Props> = ({ onComplete }) => {
     setTimeLeft(totalTime);
     setShowSummary(false);
     setGameActive(false);
-    setCountdown(3); // Start the countdown
+    setCountdown(3);
   };
 
   useEffect(() => {
     if (countdown === null) return;
     if (countdown > 0) {
-      countdownSound.play();
-      const timer = setTimeout(() => setCountdown(prev => (prev !== null ? prev - 1 : null)), 1000);
+      const timer = setTimeout(() => setCountdown((prev) => (prev !== null ? prev - 1 : null)), 1000);
       return () => clearTimeout(timer);
-    } else if (countdown === 0) {
-      setCountdown(null); // Hide countdown screen
-      setGameActive(true); // Start the game
+    } else {
+      setCountdown(null);
+      setGameActive(true);
     }
   }, [countdown]);
 
@@ -68,7 +125,7 @@ const BatakTest: React.FC<Props> = ({ onComplete }) => {
       return;
     }
 
-    const timer = setInterval(() => setTimeLeft(t => t - 1), 1000);
+    const timer = setInterval(() => setTimeLeft((t) => t - 1), 1000);
     return () => clearInterval(timer);
   }, [gameActive, timeLeft, hits, misses, mode]);
 
@@ -80,7 +137,7 @@ const BatakTest: React.FC<Props> = ({ onComplete }) => {
     if (mode === 'Acceleration') {
       intervalId = setInterval(() => {
         flashTarget();
-        setFlashSpeed(prev => Math.max(300, prev - 30));
+        setFlashSpeed((prev) => Math.max(300, prev - 30));
       }, flashSpeed);
     } else {
       const speedMap: Record<Mode, number> = {
@@ -109,28 +166,21 @@ const BatakTest: React.FC<Props> = ({ onComplete }) => {
   const handleClick = (i: number) => {
     if (!gameActive) return;
     if (i === targetIndex) {
-      hitSound.play();
-      setHits(h => h + 1);
+      setHits((h) => h + 1);
     } else {
-      missSound.play();
-      setMisses(m => m + 1);
+      setMisses((m) => m + 1);
       triggerMissFlash();
-      if (mode === 'Sudden Death') {
-        setTimeLeft(0); // end immediately
-      }
+      if (mode === 'Sudden Death') setTimeLeft(0);
     }
     setTargetIndex(null);
   };
 
   const handleMissClick = () => {
     if (!gameActive) return;
-    missSound.play();
-    setMisses(m => m + 1);
+    setMisses((m) => m + 1);
     triggerMissFlash();
     setTargetIndex(null);
-    if (mode === 'Sudden Death') {
-      setTimeLeft(0);
-    }
+    if (mode === 'Sudden Death') setTimeLeft(0);
   };
 
   const handleSummaryClose = () => {
@@ -138,152 +188,76 @@ const BatakTest: React.FC<Props> = ({ onComplete }) => {
     onComplete(score);
   };
 
-  // Start screen
+  // --- Screens ---
+
   if (!gameActive && countdown === null && !showSummary) {
     return (
-      <div style={styles.centeredScreen}>
-        <h2>Pick a Mode</h2>
-        <select value={mode} onChange={e => setMode(e.target.value as Mode)} style={styles.select}>
+      <div style={styles.container}>
+        <h1 style={{ fontSize: '2.5rem', fontWeight: 'bold', marginBottom: 8 }}>Batak</h1>
+        <p style={{ fontSize: '1rem', color: '#ccc', maxWidth: '500px', marginBottom: 24 }}>
+          Test your reflexes by clicking the circles as they light up. Choose a mode below and get ready to react fast!
+        </p>
+        <select value={mode} onChange={(e) => setMode(e.target.value as Mode)} style={styles.select}>
           <option value="Classic">Classic</option>
           <option value="Speed">Speed</option>
           <option value="Precision">Precision</option>
           <option value="Sudden Death">Sudden Death</option>
           <option value="Acceleration">Acceleration</option>
         </select>
-        <button onClick={handleStart} style={styles.buttonClose}>Start</button>
+        <button onClick={handleStart} style={{ ...styles.button, marginTop: 16 }}>Start</button>
       </div>
     );
   }
+  
 
-  // Countdown screen
   if (countdown !== null) {
     return (
-      <div style={styles.centeredScreen}>
-        <h2>Get ready...</h2>
-        <h1>{countdown}</h1>
+      <div style={styles.container}>
+        <h2>🎬 Get Ready...</h2>
+        <div style={{ fontSize: 64, fontWeight: 'bold', marginTop: 12 }}>{countdown}</div>
       </div>
     );
   }
 
-  // Summary screen
   if (showSummary) {
     return (
-      <div style={styles.centeredScreen}>
+      <div style={styles.container}>
         <h2>🏁 Test Complete</h2>
         <p>✅ Hits: {hits}</p>
         <p>❌ Misses: {misses}</p>
         <p>🎯 Accuracy: {(hits / (hits + misses || 1) * 100).toFixed(1)}%</p>
         <p>🏆 Score: {score}</p>
-        <button onClick={handleSummaryClose} style={styles.buttonClose}>Continue</button>
+        <button onClick={handleSummaryClose} style={styles.button}>Continue</button>
       </div>
     );
   }
 
-  // Game screen
   return (
-    <div style={styles.gameContainer}>
-      {showMissFlash && <div style={styles.missFlash} />}
-      <div style={styles.uiContainer}>
-        <h2>⏱ Time Left: {timeLeft}s</h2>
+    <div style={{ ...styles.container, position: 'relative' }} onClick={handleMissClick}>
+      {showMissFlash && <div style={styles.flashOverlay} />}
+      <div style={{ position: 'absolute', top: 20, textAlign: 'center' }}>
+        <h2 style={styles.header}>⏱ Time Left: {timeLeft}s</h2>
         <h3>🎯 Hits: {hits} | ❌ Misses: {misses}</h3>
       </div>
-      <div style={styles.gridWrapper} onClick={handleMissClick}>
-        <div style={styles.grid}>
-          {Array.from({ length: rows * cols }).map((_, i) => (
-            <div
-              key={i}
-              onClick={(e) => {
-                e.stopPropagation();
-                handleClick(i);
-              }}
-              style={{
-                ...styles.button,
-                width: buttonSize,
-                height: buttonSize,
-                backgroundColor: i === targetIndex ? '#ffc107' : '#666',
-                boxShadow: i === targetIndex ? '0 0 25px 8px rgba(255, 255, 0, 0.8)' : undefined,
-              }}
-            />
-          ))}
-        </div>
+      <div style={styles.grid}>
+        {Array.from({ length: rows * cols }).map((_, i) => (
+          <div
+            key={i}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleClick(i);
+            }}
+            style={{
+              ...styles.circleButton,
+              ...(i === targetIndex ? styles.active : {}),
+              width: buttonSize,
+              height: buttonSize,
+            }}
+          />
+        ))}
       </div>
     </div>
   );
-};
-
-const styles: { [key: string]: React.CSSProperties } = {
-  gameContainer: {
-    position: 'relative',
-    width: '100vw',
-    height: '100vh',
-    backgroundColor: '#1c1c1c',
-    overflow: 'hidden',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  centeredScreen: {
-    width: '100vw',
-    height: '100vh',
-    backgroundColor: '#1c1c1c',
-    color: 'white',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    textAlign: 'center',
-    gap: 12,
-  },
-  uiContainer: {
-    position: 'absolute',
-    top: '3%',
-    textAlign: 'center',
-    color: 'white',
-    zIndex: 2,
-  },
-  gridWrapper: {
-    flex: 1,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 1,
-  },
-  grid: {
-    display: 'grid',
-    gridTemplateRows: 'repeat(4, 1fr)',
-    gridTemplateColumns: 'repeat(4, 1fr)',
-    gap: '16px',
-  },
-  button: {
-    borderRadius: '50%',
-    cursor: 'pointer',
-    transition: 'all 0.3s ease',
-  },
-  buttonClose: {
-    marginTop: 20,
-    padding: '10px 20px',
-    fontSize: '1rem',
-    borderRadius: 10,
-    border: 'none',
-    backgroundColor: '#ffc107',
-    cursor: 'pointer',
-  },
-  missFlash: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: '100vw',
-    height: '100vh',
-    backgroundColor: 'rgba(255, 0, 0, 0.3)',
-    zIndex: 5,
-    pointerEvents: 'none',
-  },
-  select: {
-    padding: '10px',
-    fontSize: '1rem',
-    borderRadius: 10,
-  },
 };
 
 export default BatakTest;
