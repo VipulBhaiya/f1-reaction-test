@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 
+type Mode = 'Classic' | 'Speed' | 'Precision' | 'Sudden Death' | 'Acceleration';
+
 type Props = {
   onComplete: (score: number) => void;
 };
 
 const BatakTest: React.FC<Props> = ({ onComplete }) => {
-  const [countdown, setCountdown] = useState(3);
+  const [mode, setMode] = useState<Mode>('Classic');
+  const [countdown, setCountdown] = useState<number | null>(null);
   const [gameActive, setGameActive] = useState(false);
   const [targetIndex, setTargetIndex] = useState<number | null>(null);
   const [hits, setHits] = useState(0);
@@ -14,6 +17,7 @@ const BatakTest: React.FC<Props> = ({ onComplete }) => {
   const [showSummary, setShowSummary] = useState(false);
   const [score, setScore] = useState(0);
   const [showMissFlash, setShowMissFlash] = useState(false);
+  const [flashSpeed, setFlashSpeed] = useState(1000);
 
   const totalTime = 30;
   const maxReactionTime = 2.5;
@@ -26,40 +30,76 @@ const BatakTest: React.FC<Props> = ({ onComplete }) => {
   const missSound = new Audio('/sounds/miss.mp3');
   const countdownSound = new Audio('/sounds/countdown.mp3');
 
+  const handleStart = () => {
+    setHits(0);
+    setMisses(0);
+    setScore(0);
+    setFlashSpeed(1000);
+    setTimeLeft(totalTime);
+    setShowSummary(false);
+    setGameActive(false);
+    setCountdown(3); // Start the countdown
+  };
+
   useEffect(() => {
+    if (countdown === null) return;
     if (countdown > 0) {
       countdownSound.play();
-      const timer = setTimeout(() => setCountdown(c => c - 1), 1000);
+      const timer = setTimeout(() => setCountdown(prev => (prev !== null ? prev - 1 : null)), 1000);
       return () => clearTimeout(timer);
-    } else {
-      setGameActive(true);
+    } else if (countdown === 0) {
+      setCountdown(null); // Hide countdown screen
+      setGameActive(true); // Start the game
     }
   }, [countdown]);
 
   useEffect(() => {
     if (!gameActive) return;
-    if (timeLeft === 0) {
+
+    if (timeLeft === 0 || (mode === 'Sudden Death' && misses > 0)) {
       setGameActive(false);
       const totalAttempts = hits + misses;
       const accuracy = totalAttempts > 0 ? hits / totalAttempts : 1;
       const avgReaction = totalTime / (totalAttempts || 1);
-      const finalScore = Math.round((accuracy * 70) + (30 * (1 - avgReaction / maxReactionTime)));
+      const rawScore = (accuracy * 70) + (30 * (1 - avgReaction / maxReactionTime));
+      const finalScore = Math.max(0, Math.round(rawScore));
       setScore(finalScore);
       setShowSummary(true);
       return;
     }
+
     const timer = setInterval(() => setTimeLeft(t => t - 1), 1000);
     return () => clearInterval(timer);
-  }, [gameActive, timeLeft, hits, misses]);
+  }, [gameActive, timeLeft, hits, misses, mode]);
 
   useEffect(() => {
-    if (!gameActive) return;
-    const flashInterval = setInterval(() => {
-      const newIndex = Math.floor(Math.random() * rows * cols);
-      setTargetIndex(newIndex);
-    }, 1000);
-    return () => clearInterval(flashInterval);
-  }, [gameActive]);
+    if (!gameActive || mode === 'Precision') return;
+
+    let intervalId: NodeJS.Timeout;
+
+    if (mode === 'Acceleration') {
+      intervalId = setInterval(() => {
+        flashTarget();
+        setFlashSpeed(prev => Math.max(300, prev - 30));
+      }, flashSpeed);
+    } else {
+      const speedMap: Record<Mode, number> = {
+        Classic: 1000,
+        Speed: 500,
+        Precision: 1000,
+        'Sudden Death': 1000,
+        Acceleration: flashSpeed,
+      };
+      intervalId = setInterval(flashTarget, speedMap[mode]);
+    }
+
+    return () => clearInterval(intervalId);
+  }, [gameActive, mode, flashSpeed]);
+
+  const flashTarget = () => {
+    const newIndex = Math.floor(Math.random() * rows * cols);
+    setTargetIndex(newIndex);
+  };
 
   const triggerMissFlash = () => {
     setShowMissFlash(true);
@@ -75,6 +115,9 @@ const BatakTest: React.FC<Props> = ({ onComplete }) => {
       missSound.play();
       setMisses(m => m + 1);
       triggerMissFlash();
+      if (mode === 'Sudden Death') {
+        setTimeLeft(0); // end immediately
+      }
     }
     setTargetIndex(null);
   };
@@ -83,8 +126,11 @@ const BatakTest: React.FC<Props> = ({ onComplete }) => {
     if (!gameActive) return;
     missSound.play();
     setMisses(m => m + 1);
-    setTargetIndex(null);
     triggerMissFlash();
+    setTargetIndex(null);
+    if (mode === 'Sudden Death') {
+      setTimeLeft(0);
+    }
   };
 
   const handleSummaryClose = () => {
@@ -92,7 +138,25 @@ const BatakTest: React.FC<Props> = ({ onComplete }) => {
     onComplete(score);
   };
 
-  if (!gameActive && countdown > 0) {
+  // Start screen
+  if (!gameActive && countdown === null && !showSummary) {
+    return (
+      <div style={styles.centeredScreen}>
+        <h2>Pick a Mode</h2>
+        <select value={mode} onChange={e => setMode(e.target.value as Mode)} style={styles.select}>
+          <option value="Classic">Classic</option>
+          <option value="Speed">Speed</option>
+          <option value="Precision">Precision</option>
+          <option value="Sudden Death">Sudden Death</option>
+          <option value="Acceleration">Acceleration</option>
+        </select>
+        <button onClick={handleStart} style={styles.buttonClose}>Start</button>
+      </div>
+    );
+  }
+
+  // Countdown screen
+  if (countdown !== null) {
     return (
       <div style={styles.centeredScreen}>
         <h2>Get ready...</h2>
@@ -101,6 +165,7 @@ const BatakTest: React.FC<Props> = ({ onComplete }) => {
     );
   }
 
+  // Summary screen
   if (showSummary) {
     return (
       <div style={styles.centeredScreen}>
@@ -114,6 +179,7 @@ const BatakTest: React.FC<Props> = ({ onComplete }) => {
     );
   }
 
+  // Game screen
   return (
     <div style={styles.gameContainer}>
       {showMissFlash && <div style={styles.missFlash} />}
@@ -212,6 +278,11 @@ const styles: { [key: string]: React.CSSProperties } = {
     backgroundColor: 'rgba(255, 0, 0, 0.3)',
     zIndex: 5,
     pointerEvents: 'none',
+  },
+  select: {
+    padding: '10px',
+    fontSize: '1rem',
+    borderRadius: 10,
   },
 };
 
