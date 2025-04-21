@@ -6,16 +6,26 @@ interface ResultsProps {
   scores: number[];
   onRestart: () => void;
   onLeaderboard: () => void;
+  devMode?: boolean;
 }
 
-const Results: React.FC<ResultsProps> = ({ scores, onRestart, onLeaderboard }) => {
+const Results: React.FC<ResultsProps> = ({
+  scores,
+  onRestart,
+  onLeaderboard,
+  devMode = false,
+}) => {
   const [name, setName] = useState('');
   const [submitted, setSubmitted] = useState(false);
 
-  if (scores.length !== 3) return null;
+  const usedScores = devMode ? [88, 92, 85] : scores;
 
-  const finalScore = Math.round((scores[0] + scores[1] + scores[2]) / 3);
-  const submissionKey = `submitted_${finalScore}_${scores.join('_')}`;
+  if (usedScores.length !== 3) return null;
+
+  const finalScore = Math.round(
+    (usedScores[0] + usedScores[1] + usedScores[2]) / 3
+  );
+  const submissionKey = `submitted_${finalScore}_${usedScores.join('_')}`;
 
   useEffect(() => {
     if (sessionStorage.getItem(submissionKey) === 'true') {
@@ -23,16 +33,28 @@ const Results: React.FC<ResultsProps> = ({ scores, onRestart, onLeaderboard }) =
     }
   }, [submissionKey]);
 
+  let category = '';
+  if (finalScore >= 90) category = 'F1 Material';
+  else if (finalScore >= 75) category = 'F2 Prospect';
+  else if (finalScore >= 60) category = 'Semi-Pro';
+  else if (finalScore >= 45) category = 'Club Racer';
+  else category = 'Casual Fan';
+
   const saveScore = async () => {
+    if (devMode) {
+      console.log('🛠 Dev mode: Skipping score save.');
+      return;
+    }
+
     try {
       const scoreRef = ref(db, 'scores');
       await push(scoreRef, {
         name: name.trim() || 'Anonymous',
         average: finalScore,
         category,
-        batak: scores[0],
-        tennis: scores[1],
-        lights: scores[2],
+        batak: usedScores[0],
+        tennis: usedScores[1],
+        lights: usedScores[2],
         timestamp: Date.now(),
       });
       setSubmitted(true);
@@ -42,27 +64,20 @@ const Results: React.FC<ResultsProps> = ({ scores, onRestart, onLeaderboard }) =
     }
   };
 
-  let category = '';
-  if (finalScore >= 90) category = 'F1 Material';
-  else if (finalScore >= 75) category = 'F2 Prospect';
-  else if (finalScore >= 60) category = 'Semi-Pro';
-  else if (finalScore >= 45) category = 'Club Racer';
-  else category = 'Casual Fan';
-
   return (
     <div style={styles.wrapper}>
       <div style={styles.container}>
         <h1 style={styles.title}>🏁 Results</h1>
         <div style={styles.scoreBox}>
-          <p>🟡 Batak: {scores[0]}/100</p>
-          <p>🎾 Tennis: {scores[1]}/100</p>
-          <p>💡 Lights: {scores[2]}/100</p>
+          <p>🟡 Batak: {usedScores[0]}/100</p>
+          <p>🎾 Tennis: {usedScores[1]}/100</p>
+          <p>💡 Lights: {usedScores[2]}/100</p>
         </div>
 
         <h2 style={styles.subheader}>Final Score: {finalScore}/100</h2>
         <h2 style={styles.subheader}>Category: {category}</h2>
 
-        {!submitted ? (
+        {!submitted && !devMode ? (
           <div style={styles.inputSection}>
             <input
               type="text"
@@ -75,6 +90,10 @@ const Results: React.FC<ResultsProps> = ({ scores, onRestart, onLeaderboard }) =
               Submit Score
             </button>
           </div>
+        ) : devMode ? (
+          <p style={{ marginTop: '16px', fontWeight: 'bold', color: '#ccc' }}>
+            🛠 Dev Mode: Score not submitted
+          </p>
         ) : (
           <p style={{ marginTop: '16px', fontWeight: 'bold', color: '#0f0' }}>
             ✅ Score submitted!
@@ -82,8 +101,12 @@ const Results: React.FC<ResultsProps> = ({ scores, onRestart, onLeaderboard }) =
         )}
 
         <div style={styles.buttonGroup}>
-          <button onClick={onRestart} style={styles.button}>Restart</button>
-          <button onClick={onLeaderboard} style={styles.button}>Leaderboard</button>
+          <button onClick={onRestart} style={styles.button}>
+            Restart
+          </button>
+          <button onClick={onLeaderboard} style={styles.button}>
+            Leaderboard
+          </button>
         </div>
       </div>
     </div>

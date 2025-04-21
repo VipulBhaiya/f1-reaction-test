@@ -11,6 +11,28 @@ const App = () => {
   const [step, setStep] = useState<'batak' | 'tennis' | 'lights' | 'result' | 'leaderboard'>('batak');
   const [scores, setScores] = useState<number[]>([]);
   const [devMode, setDevMode] = useState(false);
+  const [showDevPassword, setShowDevPassword] = useState(true);
+  
+  {showDevPassword && !devMode && (
+    <div style={{ position: 'fixed', top: 50, left: 50, background: '#111', padding: 20, color: 'white', zIndex: 999 }}>
+      <input
+        type="password"
+        placeholder="Enter Dev Password"
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            const password = (e.target as HTMLInputElement).value;
+            if (password === 'letmein') {
+              setDevMode(true);
+              setShowDevPassword(false);
+            } else {
+              alert('Incorrect password');
+            }
+          }
+        }}
+      />
+    </div>
+  )}
+  
 
   const handleComplete = (time: number) => {
     setScores((prev) => {
