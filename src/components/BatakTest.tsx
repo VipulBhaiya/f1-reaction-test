@@ -1,92 +1,218 @@
 import React, { useState, useEffect } from 'react';
 
 type Props = {
-  onComplete: (avgMs: number) => void;
+  onComplete: (score: number) => void;
 };
 
-const TOTAL_HITS = 10;
-const BUTTON_COUNT = 9;
-
 const BatakTest: React.FC<Props> = ({ onComplete }) => {
-  const [activeIndex, setActiveIndex] = useState<number | null>(null);
-  const [startTime, setStartTime] = useState<number>(0);
-  const [reactionTimes, setReactionTimes] = useState<number[]>([]);
-  const [round, setRound] = useState<number>(0);
+  const [countdown, setCountdown] = useState(3);
+  const [gameActive, setGameActive] = useState(false);
+  const [targetIndex, setTargetIndex] = useState<number | null>(null);
+  const [hits, setHits] = useState(0);
+  const [misses, setMisses] = useState(0);
+  const [timeLeft, setTimeLeft] = useState(30);
+  const [showSummary, setShowSummary] = useState(false);
+  const [score, setScore] = useState(0);
+  const [showMissFlash, setShowMissFlash] = useState(false);
+
+  const totalTime = 30;
+  const maxReactionTime = 2.5;
+  const rows = 4;
+  const cols = 4;
+
+  const buttonSize = Math.min(window.innerWidth, window.innerHeight) / 7;
+
+  const hitSound = new Audio('/sounds/hit.mp3');
+  const missSound = new Audio('/sounds/miss.mp3');
+  const countdownSound = new Audio('/sounds/countdown.mp3');
 
   useEffect(() => {
-    if (round >= TOTAL_HITS) {
-      const avg = Math.round(
-        reactionTimes.reduce((a, b) => a + b, 0) / reactionTimes.length
-      );
-      onComplete(avg);
+    if (countdown > 0) {
+      countdownSound.play();
+      const timer = setTimeout(() => setCountdown(c => c - 1), 1000);
+      return () => clearTimeout(timer);
+    } else {
+      setGameActive(true);
+    }
+  }, [countdown]);
+
+  useEffect(() => {
+    if (!gameActive) return;
+    if (timeLeft === 0) {
+      setGameActive(false);
+      const totalAttempts = hits + misses;
+      const accuracy = totalAttempts > 0 ? hits / totalAttempts : 1;
+      const avgReaction = totalTime / (totalAttempts || 1);
+      const finalScore = Math.round((accuracy * 70) + (30 * (1 - avgReaction / maxReactionTime)));
+      setScore(finalScore);
+      setShowSummary(true);
       return;
     }
+    const timer = setInterval(() => setTimeLeft(t => t - 1), 1000);
+    return () => clearInterval(timer);
+  }, [gameActive, timeLeft, hits, misses]);
 
-    const delay = Math.random() * 1500 + 500; // 500ms - 2000ms
-    const timer = setTimeout(() => {
-      const nextIndex = Math.floor(Math.random() * BUTTON_COUNT);
-      setActiveIndex(nextIndex);
-      setStartTime(Date.now());
-    }, delay);
+  useEffect(() => {
+    if (!gameActive) return;
+    const flashInterval = setInterval(() => {
+      const newIndex = Math.floor(Math.random() * rows * cols);
+      setTargetIndex(newIndex);
+    }, 1000);
+    return () => clearInterval(flashInterval);
+  }, [gameActive]);
 
-    return () => clearTimeout(timer);
-  }, [round]);
-
-  const handleClick = (index: number) => {
-    if (index === activeIndex) {
-      const rt = Date.now() - startTime;
-      setReactionTimes([...reactionTimes, rt]);
-      setActiveIndex(null);
-      setRound((r) => r + 1);
-    }
+  const triggerMissFlash = () => {
+    setShowMissFlash(true);
+    setTimeout(() => setShowMissFlash(false), 150);
   };
 
-  const containerStyle: React.CSSProperties = {
+  const handleClick = (i: number) => {
+    if (!gameActive) return;
+    if (i === targetIndex) {
+      hitSound.play();
+      setHits(h => h + 1);
+    } else {
+      missSound.play();
+      setMisses(m => m + 1);
+      triggerMissFlash();
+    }
+    setTargetIndex(null);
+  };
+
+  const handleMissClick = () => {
+    if (!gameActive) return;
+    missSound.play();
+    setMisses(m => m + 1);
+    setTargetIndex(null);
+    triggerMissFlash();
+  };
+
+  const handleSummaryClose = () => {
+    setShowSummary(false);
+    onComplete(score);
+  };
+
+  if (!gameActive && countdown > 0) {
+    return (
+      <div style={styles.centeredScreen}>
+        <h2>Get ready...</h2>
+        <h1>{countdown}</h1>
+      </div>
+    );
+  }
+
+  if (showSummary) {
+    return (
+      <div style={styles.centeredScreen}>
+        <h2>🏁 Test Complete</h2>
+        <p>✅ Hits: {hits}</p>
+        <p>❌ Misses: {misses}</p>
+        <p>🎯 Accuracy: {(hits / (hits + misses || 1) * 100).toFixed(1)}%</p>
+        <p>🏆 Score: {score}</p>
+        <button onClick={handleSummaryClose} style={styles.buttonClose}>Continue</button>
+      </div>
+    );
+  }
+
+  return (
+    <div style={styles.gameContainer}>
+      {showMissFlash && <div style={styles.missFlash} />}
+      <div style={styles.uiContainer}>
+        <h2>⏱ Time Left: {timeLeft}s</h2>
+        <h3>🎯 Hits: {hits} | ❌ Misses: {misses}</h3>
+      </div>
+      <div style={styles.gridWrapper} onClick={handleMissClick}>
+        <div style={styles.grid}>
+          {Array.from({ length: rows * cols }).map((_, i) => (
+            <div
+              key={i}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleClick(i);
+              }}
+              style={{
+                ...styles.button,
+                width: buttonSize,
+                height: buttonSize,
+                backgroundColor: i === targetIndex ? '#ffc107' : '#666',
+                boxShadow: i === targetIndex ? '0 0 25px 8px rgba(255, 255, 0, 0.8)' : undefined,
+              }}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const styles: { [key: string]: React.CSSProperties } = {
+  gameContainer: {
+    position: 'relative',
+    width: '100vw',
+    height: '100vh',
+    backgroundColor: '#1c1c1c',
+    overflow: 'hidden',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: '100vh',
-    backgroundColor: '#111',
+  },
+  centeredScreen: {
+    width: '100vw',
+    height: '100vh',
+    backgroundColor: '#1c1c1c',
     color: 'white',
-    fontFamily: 'Arial, sans-serif'
-  };
-
-  const gridStyle: React.CSSProperties = {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    textAlign: 'center',
+    gap: 12,
+  },
+  uiContainer: {
+    position: 'absolute',
+    top: '3%',
+    textAlign: 'center',
+    color: 'white',
+    zIndex: 2,
+  },
+  gridWrapper: {
+    flex: 1,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1,
+  },
+  grid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(3, 64px)',
-    gap: '12px',
-    marginBottom: '24px'
-  };
-
-  const buttonStyle = (active: boolean): React.CSSProperties => ({
-    width: '64px',
-    height: '64px',
-    borderRadius: '8px',
-    backgroundColor: active ? 'red' : '#333',
-    border: 'none',
-    outline: 'none',
+    gridTemplateRows: 'repeat(4, 1fr)',
+    gridTemplateColumns: 'repeat(4, 1fr)',
+    gap: '16px',
+  },
+  button: {
+    borderRadius: '50%',
     cursor: 'pointer',
-  });
-
-  return (
-    <div style={containerStyle}>
-      <h2 style={{ fontSize: '24px', marginBottom: '16px' }}>BATAK Simulator</h2>
-      <div style={gridStyle}>
-        {Array.from({ length: BUTTON_COUNT }).map((_, i) => (
-          <button
-            key={i}
-            onClick={() => handleClick(i)}
-            style={buttonStyle(i === activeIndex)}
-          />
-        ))}
-      </div>
-      <p>Click the red button as fast as you can!</p>
-      <p style={{ marginTop: '8px', fontSize: '14px', color: '#aaa' }}>
-        Round {round + 1} / {TOTAL_HITS}
-      </p>
-    </div>
-  );
+    transition: 'all 0.3s ease',
+  },
+  buttonClose: {
+    marginTop: 20,
+    padding: '10px 20px',
+    fontSize: '1rem',
+    borderRadius: 10,
+    border: 'none',
+    backgroundColor: '#ffc107',
+    cursor: 'pointer',
+  },
+  missFlash: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100vw',
+    height: '100vh',
+    backgroundColor: 'rgba(255, 0, 0, 0.3)',
+    zIndex: 5,
+    pointerEvents: 'none',
+  },
 };
 
 export default BatakTest;

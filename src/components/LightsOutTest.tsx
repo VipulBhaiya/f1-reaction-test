@@ -1,14 +1,15 @@
-// LightsOutTest.tsx – No Tailwind
 import React, { useEffect, useState, useRef } from 'react';
 
 const TRIALS = 5;
+const MAX_LIGHT_TIME = 1000; // in milliseconds
 
-const LightsOutTest = ({ onComplete }: { onComplete: (avgTime: number) => void }) => {
+const LightsOutTest = ({ onComplete }: { onComplete: (score: number) => void }) => {
   const [trial, setTrial] = useState(0);
-  const [waiting, setWaiting] = useState(true);
   const [ready, setReady] = useState(false);
   const [startTime, setStartTime] = useState<number | null>(null);
-  const [times, setTimes] = useState<number[]>([]);
+  const [reactionTimes, setReactionTimes] = useState<number[]>([]);
+  const [misses, setMisses] = useState(0);
+  const [hits, setHits] = useState(0);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -19,9 +20,17 @@ const LightsOutTest = ({ onComplete }: { onComplete: (avgTime: number) => void }
         setStartTime(Date.now());
       }, delay);
     } else {
-      const avg = times.length ? Math.round(times.reduce((a, b) => a + b, 0) / times.length) : 0;
-      onComplete(avg);
+      // Calculate scoring
+      const totalTime = reactionTimes.reduce((a, b) => a + b, 0);
+      const accuracy = hits + misses > 0 ? hits / (hits + misses) : 1;
+      const avgTimePerLight = hits > 0 ? totalTime / hits : MAX_LIGHT_TIME;
+      const score =
+        accuracy * 65 +
+        35 * (1 - Math.min(avgTimePerLight, MAX_LIGHT_TIME) / MAX_LIGHT_TIME);
+
+      onComplete(Math.round(score));
     }
+
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
@@ -30,10 +39,14 @@ const LightsOutTest = ({ onComplete }: { onComplete: (avgTime: number) => void }
   const handleClick = () => {
     if (ready && startTime) {
       const reactionTime = Date.now() - startTime;
-      setTimes((prev) => [...prev, reactionTime]);
+      setReactionTimes((prev) => [...prev, reactionTime]);
+      setHits((h) => h + 1);
       setReady(false);
       setStartTime(null);
       setTrial((prev) => prev + 1);
+    } else if (!ready && trial < TRIALS) {
+      // premature click
+      setMisses((m) => m + 1);
     }
   };
 
@@ -48,7 +61,9 @@ const LightsOutTest = ({ onComplete }: { onComplete: (avgTime: number) => void }
         alignItems: 'center',
         justifyContent: 'center',
         color: 'white',
-        fontSize: '24px'
+        fontSize: '24px',
+        userSelect: 'none',
+        cursor: 'pointer'
       }}
     >
       Lights Out Reaction - Click when green!
