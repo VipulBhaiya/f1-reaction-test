@@ -1,8 +1,8 @@
 // App.tsx
 import React, { useState } from 'react';
-import BatakTest from './components/BatakTest';
-import TennisBallTest from './components/TennisBallTest';
-import LightsOutTest from './components/LightsOutTest';
+import BatakTest from './games/BatakTest';
+import TennisBallTest from './games/TennisBallTest';
+import LightsOutTest from './games/LightsOutTest';
 import Leaderboard from './components/Leaderboard';
 import DevMenu from './components/DevMenu';
 import Results from './components/Results';
