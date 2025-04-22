@@ -72,17 +72,16 @@ const TennisBallTest = ({ onComplete }: { onComplete: (score: number) => void })
   const [startTime, setStartTime] = useState<number | null>(null);
   const [times, setTimes] = useState<number[]>([]);
   const [misses, setMisses] = useState(0);
-  const [spamClicks, setSpamClicks] = useState(0);
   const [finalScore, setFinalScore] = useState<number | null>(null);
-  const [ballHasLanded, setBallHasLanded] = useState(false);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [flashColor, setFlashColor] = useState<'green' | 'red' | null>(null);
   const [ballKey, setBallKey] = useState(0);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [isTrialResolved, setIsTrialResolved] = useState(false);
 
   useEffect(() => {
     if (phase === 'countdown') {
       if (countdown > 0) {
-        const timer = setTimeout(() => setCountdown(c => c - 1), 1000);
+        const timer = setTimeout(() => setCountdown((c) => c - 1), 1000);
         return () => clearTimeout(timer);
       } else {
         setPhase('playing');
@@ -96,14 +95,13 @@ const TennisBallTest = ({ onComplete }: { onComplete: (score: number) => void })
       timeoutRef.current = setTimeout(() => {
         const randomBall = Math.floor(Math.random() * 2);
         setFallingIndex(randomBall);
-        setBallHasLanded(false);
         setStartTime(Date.now());
-        setBallKey(k => k + 1);
+        setBallKey((k) => k + 1);
+        setIsTrialResolved(false);
       }, delay);
     } else if (phase === 'playing' && trial >= TRIALS) {
       const hits = times.length;
-      const totalMistakes = misses + spamClicks;
-      const accuracy = hits / (hits + totalMistakes || 1);
+      const accuracy = hits / TRIALS;
       const avgTime = hits > 0 ? times.reduce((a, b) => a + b, 0) / hits : MAX_REACTION_TIME;
       const score = (accuracy * 60) + (40 * (1 - Math.min(avgTime, MAX_REACTION_TIME) / MAX_REACTION_TIME));
       setFinalScore(Math.round(score));
@@ -116,38 +114,34 @@ const TennisBallTest = ({ onComplete }: { onComplete: (score: number) => void })
   }, [trial, phase]);
 
   const handleBallClick = (index: number) => {
-    if (phase !== 'playing') return;
+    if (phase !== 'playing' || isTrialResolved) return;
 
-    if (fallingIndex === null || startTime === null) {
-      setSpamClicks(prev => prev + 1);
-      setFlashColor('red');
-      setTimeout(() => setFlashColor(null), 300);
-      return;
-    }
-
-    if (index === fallingIndex) {
+    if (index === fallingIndex && startTime !== null) {
       const reactionTime = Date.now() - startTime;
-      setTimes(prev => [...prev, reactionTime]);
+      setTimes((prev) => [...prev, reactionTime]);
       setFlashColor('green');
     } else {
-      setMisses(m => m + 1);
+      setMisses((m) => m + 1);
       setFlashColor('red');
     }
 
+    setIsTrialResolved(true);
     setTimeout(() => setFlashColor(null), 300);
     setFallingIndex(null);
     setStartTime(null);
-    setTrial(prev => prev + 1);
+    setTrial((prev) => prev + 1);
   };
 
   const handleMiss = () => {
-    setBallHasLanded(true);
+    if (isTrialResolved || fallingIndex === null) return;
+
+    setIsTrialResolved(true);
+    setFlashColor('red');
     setTimeout(() => {
-      setMisses(m => m + 1);
-      setFlashColor('red');
+      setMisses((m) => m + 1);
       setFallingIndex(null);
       setStartTime(null);
-      setTrial(prev => prev + 1);
+      setTrial((prev) => prev + 1);
       setTimeout(() => setFlashColor(null), 300);
     }, 200);
   };
@@ -157,14 +151,13 @@ const TennisBallTest = ({ onComplete }: { onComplete: (score: number) => void })
     setTrial(0);
     setTimes([]);
     setMisses(0);
-    setSpamClicks(0);
     setFallingIndex(null);
     setFinalScore(null);
     setPhase('countdown');
   };
 
   const renderBalls = () => {
-    return [0, 1].map(index => {
+    return [0, 1].map((index) => {
       const isFalling = index === fallingIndex;
       const xPosition = index === 0 ? '20%' : '70%';
 
@@ -176,15 +169,15 @@ const TennisBallTest = ({ onComplete }: { onComplete: (score: number) => void })
               initial={{ y: 0, scaleX: 1, scaleY: 1 }}
               animate={{
                 y: 360,
-                scaleX: ballHasLanded ? [1, 1.4, 1] : 1,
-                scaleY: ballHasLanded ? [1, 0.5, 1] : 1,
+                scaleX: isTrialResolved ? [1, 1.3, 1] : 1,
+                scaleY: isTrialResolved ? [1, 0.5, 1] : 1,
               }}
               transition={{
                 y: { duration: 1.2, ease: 'easeIn' },
-                scaleX: { duration: 0.4, ease: 'easeOut' },
-                scaleY: { duration: 0.4, ease: 'easeOut' },
+                scaleX: { duration: 0.3, ease: 'easeOut' },
+                scaleY: { duration: 0.3, ease: 'easeOut' },
               }}
-              onAnimationComplete={() => handleMiss()}
+              onAnimationComplete={handleMiss}
               style={{
                 ...styles.ballStyle,
                 backgroundColor: index === 0 ? '#00e676' : '#2196f3',
@@ -214,7 +207,7 @@ const TennisBallTest = ({ onComplete }: { onComplete: (score: number) => void })
         return (
           <>
             <h2>Tennis Ball Catch</h2>
-            <p>Click the ball that falls. Avoid spam clicks. You have {TRIALS} tries!</p>
+            <p>Click the falling ball as fast as you can.</p>
             <button style={styles.button} onClick={startTest}>Ready</button>
           </>
         );
@@ -229,7 +222,7 @@ const TennisBallTest = ({ onComplete }: { onComplete: (score: number) => void })
         return (
           <>
             <h2>Trial {trial + 1} of {TRIALS}</h2>
-            <div style={styles.ballsRow} onClick={() => handleBallClick(-1)}>
+            <div style={styles.ballsRow}>
               {renderBalls()}
               <div style={styles.floor} />
             </div>
@@ -237,16 +230,14 @@ const TennisBallTest = ({ onComplete }: { onComplete: (score: number) => void })
         );
       case 'summary':
         const hits = times.length;
-        const totalMistakes = misses + spamClicks;
-        const accuracy = hits / (hits + totalMistakes || 1);
+        const accuracy = hits / TRIALS;
         const avgTime = hits > 0 ? times.reduce((a, b) => a + b, 0) / hits : MAX_REACTION_TIME;
         return (
           <>
             <h2>🏁 Test Summary</h2>
             <p>🎯 Hits: {hits}</p>
             <p>❌ Misses: {misses}</p>
-            <p>🖱️ Spam Clicks: {spamClicks}</p>
-            <p>⏱️ Avg Reaction: {Math.round(avgTime)} ms</p>
+            <p>⏱ Avg Reaction: {Math.round(avgTime)}ms</p>
             <p>📊 Accuracy: {(accuracy * 100).toFixed(1)}%</p>
             <h3>🔥 Score: {finalScore}</h3>
             <button style={styles.button} onClick={() => onComplete(finalScore || 0)}>Next</button>
@@ -260,7 +251,11 @@ const TennisBallTest = ({ onComplete }: { onComplete: (score: number) => void })
       style={{
         ...styles.container,
         backgroundColor:
-          flashColor === 'green' ? '#2e7d32' : flashColor === 'red' ? '#b71c1c' : '#111',
+          flashColor === 'green'
+            ? '#2e7d32'
+            : flashColor === 'red'
+            ? '#b71c1c'
+            : '#111',
         transition: 'background-color 0.3s ease',
       }}
     >
