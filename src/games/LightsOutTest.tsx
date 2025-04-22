@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import F1StartLights from '../components/F1StartLights';
 
 const TRIALS = 5;
 const MAX_LIGHT_TIME = 1000;
@@ -30,11 +31,6 @@ const styles = {
     userSelect: 'none' as const,
     marginTop: '20px',
   },
-  countdown: {
-    fontSize: '64px',
-    fontWeight: 'bold' as const,
-    marginTop: '20px',
-  },
   button: {
     padding: '10px 20px',
     fontSize: '1rem',
@@ -50,25 +46,12 @@ type Phase = 'start' | 'countdown' | 'waiting' | 'ready' | 'tooEarly' | 'summary
 
 const LightsOutTest = ({ onComplete }: { onComplete: (score: number) => void }) => {
   const [phase, setPhase] = useState<Phase>('start');
-  const [countdown, setCountdown] = useState(3);
   const [trial, setTrial] = useState(0);
   const [reactionTimes, setReactionTimes] = useState<number[]>([]);
   const [misses, setMisses] = useState(0);
   const [hits, setHits] = useState(0);
   const [startTime, setStartTime] = useState<number | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  useEffect(() => {
-    if (phase === 'countdown') {
-      if (countdown > 0) {
-        const timer = setTimeout(() => setCountdown(c => c - 1), 1000);
-        return () => clearTimeout(timer);
-      } else {
-        setCountdown(3); // reset for next run
-        setPhase('waiting');
-      }
-    }
-  }, [phase, countdown]);
 
   useEffect(() => {
     if (phase === 'waiting') {
@@ -79,14 +62,6 @@ const LightsOutTest = ({ onComplete }: { onComplete: (score: number) => void }) 
       }, delay);
     }
 
-    if (phase === 'summary') {
-      const totalTime = reactionTimes.reduce((a, b) => a + b, 0);
-      const accuracy = hits / (hits + misses || 1);
-      const avgTimePerLight = hits > 0 ? totalTime / hits : MAX_LIGHT_TIME;
-      const score = (accuracy * 65) + (35 * (1 - Math.min(avgTimePerLight, MAX_LIGHT_TIME) / MAX_LIGHT_TIME));
-      onComplete(Math.round(score));
-    }
-
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
@@ -95,48 +70,61 @@ const LightsOutTest = ({ onComplete }: { onComplete: (score: number) => void }) 
   const handleClick = () => {
     if (phase === 'ready' && startTime) {
       const reactionTime = Date.now() - startTime;
-      setReactionTimes(prev => [...prev, reactionTime]);
-      setHits(h => h + 1);
+      setReactionTimes((prev) => [...prev, reactionTime]);
+      setHits((h) => h + 1);
       setStartTime(null);
       if (trial + 1 >= TRIALS) {
         setPhase('summary');
       } else {
-        setTrial(t => t + 1);
+        setTrial((t) => t + 1);
         setPhase('waiting');
       }
     } else if (phase === 'waiting') {
-      setMisses(m => m + 1);
+      setMisses((m) => m + 1);
       navigator.vibrate?.(200);
       setPhase('tooEarly');
       setTimeout(() => {
         if (trial + 1 >= TRIALS) {
           setPhase('summary');
         } else {
-          setTrial(t => t + 1);
+          setTrial((t) => t + 1);
           setPhase('waiting');
         }
       }, 1000);
     }
   };
 
+  const startTest = () => {
+    setTrial(0);
+    setHits(0);
+    setMisses(0);
+    setReactionTimes([]);
+    setPhase('countdown');
+  };
+
+  const totalTime = reactionTimes.reduce((a, b) => a + b, 0);
+  const avgTimePerLight = hits > 0 ? totalTime / hits : MAX_LIGHT_TIME;
+  const accuracy = hits / (hits + misses || 1);
+  const score =
+    (accuracy * 65) +
+    (35 * (1 - Math.min(avgTimePerLight, MAX_LIGHT_TIME) / MAX_LIGHT_TIME));
+
+  useEffect(() => {
+    if (phase === 'summary') {
+      onComplete(Math.round(score));
+    }
+  }, [phase]);
+
   const renderContent = () => {
+    const showTrial = ['waiting', 'ready', 'tooEarly'].includes(phase);
+
     switch (phase) {
       case 'start':
         return (
           <>
             <h2>Lights Out Reaction Test</h2>
             <p>Click when the screen turns green. Don’t click too early!</p>
-            <button
-              style={styles.button}
-              onClick={() => {
-                setTrial(0);
-                setHits(0);
-                setMisses(0);
-                setReactionTimes([]);
-                setCountdown(3);
-                setPhase('countdown');
-              }}
-            >
+            <button style={styles.button} onClick={startTest}>
               Ready
             </button>
           </>
@@ -145,20 +133,39 @@ const LightsOutTest = ({ onComplete }: { onComplete: (score: number) => void }) 
         return (
           <>
             <h2>🎬 Get Ready...</h2>
-            <div style={styles.countdown}>{countdown}</div>
+            <F1StartLights onComplete={() => setPhase('waiting')} />
           </>
         );
       case 'waiting':
-        return <div style={{ ...styles.box, backgroundColor: '#555' }}>Wait for it...</div>;
       case 'ready':
-        return <div style={{ ...styles.box, backgroundColor: 'green' }}>Click!</div>;
       case 'tooEarly':
-        return <div style={{ ...styles.box, backgroundColor: 'red' }}>Too early!</div>;
+        return (
+          <>
+            {showTrial && (
+              <p style={{ fontSize: '1rem', marginBottom: 8 }}>
+                Trial {trial + 1} of {TRIALS}
+              </p>
+            )}
+            <div
+              style={{
+                ...styles.box,
+                backgroundColor:
+                  phase === 'waiting'
+                    ? '#555'
+                    : phase === 'ready'
+                    ? 'green'
+                    : 'red',
+              }}
+            >
+              {phase === 'waiting'
+                ? 'Wait for it...'
+                : phase === 'ready'
+                ? 'Click!'
+                : 'Too early!'}
+            </div>
+          </>
+        );
       case 'summary':
-        const totalTime = reactionTimes.reduce((a, b) => a + b, 0);
-        const accuracy = hits / (hits + misses || 1);
-        const avgTimePerLight = hits > 0 ? totalTime / hits : MAX_LIGHT_TIME;
-        const score = (accuracy * 65) + (35 * (1 - Math.min(avgTimePerLight, MAX_LIGHT_TIME) / MAX_LIGHT_TIME));
         return (
           <>
             <h2>🏁 Test Summary</h2>

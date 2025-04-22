@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
+import F1StartLights from '../components/F1StartLights';
 
 const TRIALS = 5;
 const MAX_REACTION_TIME = 1000;
@@ -66,7 +67,6 @@ const styles = {
 
 const TennisBallTest = ({ onComplete }: { onComplete: (score: number) => void }) => {
   const [phase, setPhase] = useState<'ready' | 'countdown' | 'playing' | 'summary'>('ready');
-  const [countdown, setCountdown] = useState(3);
   const [trial, setTrial] = useState(0);
   const [fallingIndex, setFallingIndex] = useState<number | null>(null);
   const [startTime, setStartTime] = useState<number | null>(null);
@@ -77,17 +77,6 @@ const TennisBallTest = ({ onComplete }: { onComplete: (score: number) => void })
   const [ballKey, setBallKey] = useState(0);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [isTrialResolved, setIsTrialResolved] = useState(false);
-
-  useEffect(() => {
-    if (phase === 'countdown') {
-      if (countdown > 0) {
-        const timer = setTimeout(() => setCountdown((c) => c - 1), 1000);
-        return () => clearTimeout(timer);
-      } else {
-        setPhase('playing');
-      }
-    }
-  }, [countdown, phase]);
 
   useEffect(() => {
     if (phase === 'playing' && trial < TRIALS) {
@@ -147,7 +136,6 @@ const TennisBallTest = ({ onComplete }: { onComplete: (score: number) => void })
   };
 
   const startTest = () => {
-    setCountdown(3);
     setTrial(0);
     setTimes([]);
     setMisses(0);
@@ -215,7 +203,7 @@ const TennisBallTest = ({ onComplete }: { onComplete: (score: number) => void })
         return (
           <>
             <h2>🎬 Get Ready...</h2>
-            <h1>{countdown}</h1>
+            <F1StartLights onComplete={() => setPhase('playing')} />
           </>
         );
       case 'playing':

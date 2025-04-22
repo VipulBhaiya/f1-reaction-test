@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import F1StartLights from '../components/F1StartLights';
 
 type Mode = 'Classic' | 'Speed' | 'Precision' | 'Sudden Death' | 'Acceleration';
 
@@ -70,13 +71,11 @@ const styles: { [key: string]: React.CSSProperties } = {
 
 const BatakTest: React.FC<Props> = ({ onComplete }) => {
   const [mode, setMode] = useState<Mode>('Classic');
-  const [countdown, setCountdown] = useState<number | null>(null);
-  const [gameActive, setGameActive] = useState(false);
+  const [phase, setPhase] = useState<'start' | 'countdown' | 'playing' | 'summary'>('start');
   const [targetIndex, setTargetIndex] = useState<number | null>(null);
   const [hits, setHits] = useState(0);
   const [misses, setMisses] = useState(0);
   const [timeLeft, setTimeLeft] = useState(15);
-  const [showSummary, setShowSummary] = useState(false);
   const [score, setScore] = useState(0);
   const [showMissFlash, setShowMissFlash] = useState(false);
   const [flashSpeed, setFlashSpeed] = useState(1000);
@@ -94,43 +93,29 @@ const BatakTest: React.FC<Props> = ({ onComplete }) => {
     setScore(0);
     setFlashSpeed(1000);
     setTimeLeft(totalTime);
-    setShowSummary(false);
-    setGameActive(false);
-    setCountdown(3);
+    setPhase('countdown');
   };
 
   useEffect(() => {
-    if (countdown === null) return;
-    if (countdown > 0) {
-      const timer = setTimeout(() => setCountdown((prev) => (prev !== null ? prev - 1 : null)), 1000);
-      return () => clearTimeout(timer);
-    } else {
-      setCountdown(null);
-      setGameActive(true);
-    }
-  }, [countdown]);
-
-  useEffect(() => {
-    if (!gameActive) return;
+    if (phase !== 'playing') return;
 
     if (timeLeft === 0 || (mode === 'Sudden Death' && misses > 0)) {
-      setGameActive(false);
+      setPhase('summary');
       const totalAttempts = hits + misses;
       const accuracy = totalAttempts > 0 ? hits / totalAttempts : 1;
       const avgReaction = totalTime / (totalAttempts || 1);
       const rawScore = (accuracy * 70) + (30 * (1 - avgReaction / maxReactionTime));
       const finalScore = Math.max(0, Math.round(rawScore));
       setScore(finalScore);
-      setShowSummary(true);
       return;
     }
 
     const timer = setInterval(() => setTimeLeft((t) => t - 1), 1000);
     return () => clearInterval(timer);
-  }, [gameActive, timeLeft, hits, misses, mode]);
+  }, [phase, timeLeft, hits, misses, mode]);
 
   useEffect(() => {
-    if (!gameActive || mode === 'Precision') return;
+    if (phase !== 'playing' || mode === 'Precision') return;
 
     let intervalId: NodeJS.Timeout;
 
@@ -151,7 +136,7 @@ const BatakTest: React.FC<Props> = ({ onComplete }) => {
     }
 
     return () => clearInterval(intervalId);
-  }, [gameActive, mode, flashSpeed]);
+  }, [phase, mode, flashSpeed]);
 
   const flashTarget = () => {
     const newIndex = Math.floor(Math.random() * rows * cols);
@@ -164,7 +149,7 @@ const BatakTest: React.FC<Props> = ({ onComplete }) => {
   };
 
   const handleClick = (i: number) => {
-    if (!gameActive) return;
+    if (phase !== 'playing') return;
     if (i === targetIndex) {
       setHits((h) => h + 1);
     } else {
@@ -176,7 +161,7 @@ const BatakTest: React.FC<Props> = ({ onComplete }) => {
   };
 
   const handleMissClick = () => {
-    if (!gameActive) return;
+    if (phase !== 'playing') return;
     setMisses((m) => m + 1);
     triggerMissFlash();
     setTargetIndex(null);
@@ -184,13 +169,11 @@ const BatakTest: React.FC<Props> = ({ onComplete }) => {
   };
 
   const handleSummaryClose = () => {
-    setShowSummary(false);
+    setPhase('start');
     onComplete(score);
   };
 
-  // --- Screens ---
-
-  if (!gameActive && countdown === null && !showSummary) {
+  if (phase === 'start') {
     return (
       <div style={styles.container}>
         <h1 style={{ fontSize: '2.5rem', fontWeight: 'bold', marginBottom: 8 }}>Batak</h1>
@@ -208,18 +191,17 @@ const BatakTest: React.FC<Props> = ({ onComplete }) => {
       </div>
     );
   }
-  
 
-  if (countdown !== null) {
+  if (phase === 'countdown') {
     return (
       <div style={styles.container}>
         <h2>🎬 Get Ready...</h2>
-        <div style={{ fontSize: 64, fontWeight: 'bold', marginTop: 12 }}>{countdown}</div>
+        <F1StartLights onComplete={() => setPhase('playing')} />
       </div>
     );
   }
 
-  if (showSummary) {
+  if (phase === 'summary') {
     return (
       <div style={styles.container}>
         <h2>🏁 Test Complete</h2>
