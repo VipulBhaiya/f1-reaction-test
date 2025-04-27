@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import F1StartLights from '../components/F1StartLights';
 
-type Mode = 'Classic' | 'Speed' | 'Precision' | 'Sudden Death' | 'Acceleration';
+type Mode = 'Classic' | 'Speed' | 'Sudden Death' | 'Acceleration';
 
 type Props = {
   onComplete: (score: number) => void;
@@ -20,6 +20,8 @@ const styles: { [key: string]: React.CSSProperties } = {
     fontFamily: 'sans-serif',
     textAlign: 'center',
     gap: 12,
+    position: 'relative',
+    overflow: 'hidden',
   },
   grid: {
     display: 'grid',
@@ -31,11 +33,13 @@ const styles: { [key: string]: React.CSSProperties } = {
   circleButton: {
     borderRadius: '50%',
     backgroundColor: '#555',
-    transition: 'all 0.2s ease',
+    transition: 'opacity 1s ease-out, background-color 0.1s ease-in',
     cursor: 'pointer',
+    opacity: 0.5,
   },
   active: {
     backgroundColor: '#ffc107',
+    opacity: 1,
     boxShadow: '0 0 25px 8px rgba(255, 255, 0, 0.7)',
   },
   button: {
@@ -45,6 +49,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     border: 'none',
     backgroundColor: '#ffc107',
     cursor: 'pointer',
+    marginTop: 16,
   },
   select: {
     padding: '10px',
@@ -64,9 +69,6 @@ const styles: { [key: string]: React.CSSProperties } = {
     zIndex: 5,
     pointerEvents: 'none',
   },
-  header: {
-    marginBottom: 12,
-  },
 };
 
 const BatakTest: React.FC<Props> = ({ onComplete }) => {
@@ -79,13 +81,67 @@ const BatakTest: React.FC<Props> = ({ onComplete }) => {
   const [score, setScore] = useState(0);
   const [showMissFlash, setShowMissFlash] = useState(false);
   const [flashSpeed, setFlashSpeed] = useState(1000);
+  const [buttonSize, setButtonSize] = useState(Math.min(window.innerWidth, window.innerHeight) / 7);
+
+  const flashTimeout = useRef<NodeJS.Timeout | null>(null);
 
   const totalTime = 15;
-  const maxReactionTime = 2.5;
   const rows = 4;
   const cols = 4;
 
-  const buttonSize = Math.min(window.innerWidth, window.innerHeight) / 7;
+  useEffect(() => {
+    const resizeListener = () => setButtonSize(Math.min(window.innerWidth, window.innerHeight) / 7);
+    window.addEventListener('resize', resizeListener);
+    return () => window.removeEventListener('resize', resizeListener);
+  }, []);
+
+  useEffect(() => {
+    if (phase !== 'playing') return;
+
+    if (timeLeft <= 0 || (mode === 'Sudden Death' && misses > 0)) {
+      setPhase('summary');
+      calculateScore();
+      return;
+    }
+
+    const timer = setInterval(() => setTimeLeft((t) => t - 1), 1000);
+    return () => clearInterval(timer);
+  }, [phase, timeLeft, misses, mode]);
+
+  useEffect(() => {
+    if (phase !== 'playing') return;
+
+    const speedMap: Record<Mode, number> = {
+      Classic: 1000,
+      Speed: 500,
+      'Sudden Death': 1000,
+      Acceleration: flashSpeed,
+    };
+
+    const interval = setInterval(() => {
+      flashNewTarget();
+      if (mode === 'Acceleration') {
+        setFlashSpeed((prev) => Math.max(300, prev - 30));
+      }
+    }, speedMap[mode]);
+
+    return () => clearInterval(interval);
+  }, [phase, mode, flashSpeed]);
+
+  const flashNewTarget = () => {
+    const newIndex = Math.floor(Math.random() * rows * cols);
+    setTargetIndex(newIndex);
+
+    if (flashTimeout.current) clearTimeout(flashTimeout.current);
+    flashTimeout.current = setTimeout(() => {
+      setTargetIndex(null);
+    }, 700);
+  };
+
+  const triggerMissFlash = () => {
+    setShowMissFlash(true);
+    setTimeout(() => setShowMissFlash(false), 150);
+  };
 
   const handleStart = () => {
     setHits(0);
@@ -96,60 +152,9 @@ const BatakTest: React.FC<Props> = ({ onComplete }) => {
     setPhase('countdown');
   };
 
-  useEffect(() => {
-    if (phase !== 'playing') return;
-
-    if (timeLeft === 0 || (mode === 'Sudden Death' && misses > 0)) {
-      setPhase('summary');
-      const totalAttempts = hits + misses;
-      const accuracy = totalAttempts > 0 ? hits / totalAttempts : 1;
-      const avgReaction = totalTime / (totalAttempts || 1);
-      const rawScore = (accuracy * 70) + (30 * (1 - avgReaction / maxReactionTime));
-      const finalScore = Math.max(0, Math.round(rawScore));
-      setScore(finalScore);
-      return;
-    }
-
-    const timer = setInterval(() => setTimeLeft((t) => t - 1), 1000);
-    return () => clearInterval(timer);
-  }, [phase, timeLeft, hits, misses, mode]);
-
-  useEffect(() => {
-    if (phase !== 'playing' || mode === 'Precision') return;
-
-    let intervalId: NodeJS.Timeout;
-
-    if (mode === 'Acceleration') {
-      intervalId = setInterval(() => {
-        flashTarget();
-        setFlashSpeed((prev) => Math.max(300, prev - 30));
-      }, flashSpeed);
-    } else {
-      const speedMap: Record<Mode, number> = {
-        Classic: 1000,
-        Speed: 500,
-        Precision: 1000,
-        'Sudden Death': 1000,
-        Acceleration: flashSpeed,
-      };
-      intervalId = setInterval(flashTarget, speedMap[mode]);
-    }
-
-    return () => clearInterval(intervalId);
-  }, [phase, mode, flashSpeed]);
-
-  const flashTarget = () => {
-    const newIndex = Math.floor(Math.random() * rows * cols);
-    setTargetIndex(newIndex);
-  };
-
-  const triggerMissFlash = () => {
-    setShowMissFlash(true);
-    setTimeout(() => setShowMissFlash(false), 150);
-  };
-
   const handleClick = (i: number) => {
     if (phase !== 'playing') return;
+
     if (i === targetIndex) {
       setHits((h) => h + 1);
     } else {
@@ -162,10 +167,20 @@ const BatakTest: React.FC<Props> = ({ onComplete }) => {
 
   const handleMissClick = () => {
     if (phase !== 'playing') return;
+
     setMisses((m) => m + 1);
     triggerMissFlash();
     setTargetIndex(null);
     if (mode === 'Sudden Death') setTimeLeft(0);
+  };
+
+  const calculateScore = () => {
+    const totalAttempts = hits + misses;
+    const accuracy = totalAttempts > 0 ? hits / totalAttempts : 1;
+    const avgReaction = totalTime / (totalAttempts || 1);
+    const rawScore = (accuracy * 70) + (30 * (1 - avgReaction / 2.5));
+    const finalScore = Math.max(0, Math.round(rawScore));
+    setScore(finalScore);
   };
 
   const handleSummaryClose = () => {
@@ -176,18 +191,17 @@ const BatakTest: React.FC<Props> = ({ onComplete }) => {
   if (phase === 'start') {
     return (
       <div style={styles.container}>
-        <h1 style={{ fontSize: '2.5rem', fontWeight: 'bold', marginBottom: 8 }}>Batak</h1>
-        <p style={{ fontSize: '1rem', color: '#ccc', maxWidth: '500px', marginBottom: 24 }}>
-          Test your reflexes by clicking the circles as they light up. Choose a mode below and get ready to react fast!
+        <h1 style={{ fontSize: '2.5rem', fontWeight: 'bold' }}>Batak</h1>
+        <p style={{ fontSize: '1rem', color: '#ccc', maxWidth: 500 }}>
+          Test your reflexes by clicking the circles as they light up. Choose a mode and get ready!
         </p>
         <select value={mode} onChange={(e) => setMode(e.target.value as Mode)} style={styles.select}>
           <option value="Classic">Classic</option>
           <option value="Speed">Speed</option>
-          <option value="Precision">Precision</option>
           <option value="Sudden Death">Sudden Death</option>
           <option value="Acceleration">Acceleration</option>
         </select>
-        <button onClick={handleStart} style={{ ...styles.button, marginTop: 16 }}>Start</button>
+        <button onClick={handleStart} style={styles.button}>Start</button>
       </div>
     );
   }
@@ -215,10 +229,10 @@ const BatakTest: React.FC<Props> = ({ onComplete }) => {
   }
 
   return (
-    <div style={{ ...styles.container, position: 'relative' }} onClick={handleMissClick}>
+    <div style={styles.container} onClick={handleMissClick}>
       {showMissFlash && <div style={styles.flashOverlay} />}
-      <div style={{ position: 'absolute', top: 20, textAlign: 'center' }}>
-        <h2 style={styles.header}>⏱ Time Left: {timeLeft}s</h2>
+      <div style={{ position: 'absolute', top: 20 }}>
+        <h2>⏱ Time Left: {timeLeft}s</h2>
         <h3>🎯 Hits: {hits} | ❌ Misses: {misses}</h3>
       </div>
       <div style={styles.grid}>
