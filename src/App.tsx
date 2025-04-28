@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 import BatakTest from './games/BatakTest';
@@ -12,6 +12,7 @@ import SimIntro from './components/SimIntro';
 import TransitionScreen from './components/TransitionScreen';
 import MusicManager from './components/MusicManager';
 
+/** Step Types */
 type Step =
   | 'main-menu'
   | 'sim-intro'
@@ -30,6 +31,7 @@ const App = () => {
   const [scores, setScores] = useState<number[]>([]);
   const [devMode, setDevMode] = useState(false);
 
+  /** Toggle Dev Mode on 'D' key press */
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
       if (e.key.toLowerCase() === 'd') {
@@ -40,14 +42,16 @@ const App = () => {
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, []);
 
-  const goToStep = (target: Step, message: string, duration = 1600) => {
+  /** Navigate to a step via TransitionScreen */
+  const goToStep = useCallback((target: Step, message: string, duration = 1600) => {
     setTransitionMessage(message);
     setNextStep(target);
     setTransitionDuration(duration);
     setStep('transition');
-  };
+  }, []);
 
-  const handleComplete = (score: number) => {
+  /** Handle game completion */
+  const handleComplete = useCallback((score: number) => {
     setScores((prev) => [...prev, score]);
     if (!devMode) {
       switch (step) {
@@ -62,13 +66,15 @@ const App = () => {
           break;
       }
     }
-  };
+  }, [devMode, step, goToStep]);
 
-  const handleRestart = () => {
+  /** Restart entire simulation */
+  const handleRestart = useCallback(() => {
     setScores([]);
     setStep('main-menu');
-  };
+  }, []);
 
+  /** Animation fade preset */
   const fade = {
     initial: { opacity: 0 },
     animate: { opacity: 1 },
@@ -76,6 +82,7 @@ const App = () => {
     transition: { duration: 1.2, ease: 'easeInOut' },
   };
 
+  /** Render the current Step component */
   const renderStep = () => {
     switch (step) {
       case 'main-menu':
@@ -144,9 +151,9 @@ const App = () => {
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-black text-white">
-      {/* Floating Music Button */}
+      {/* Floating Music Manager */}
       <div className="absolute bottom-6 right-6 z-30">
-        <MusicManager />
+        <MusicManager step={step} />
       </div>
 
       {/* Dev Mode (press D to toggle) */}
@@ -158,7 +165,7 @@ const App = () => {
         />
       )}
 
-      {/* Main Game Screens */}
+      {/* Main Screen Renderer */}
       <AnimatePresence mode="wait">
         {renderStep()}
       </AnimatePresence>

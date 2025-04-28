@@ -1,53 +1,89 @@
 import { useEffect, useRef, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import backgroundMusic from '../assets/Music/backroundMusic.mp3'; // adjust path if needed
+import { AnimatePresence, motion } from 'framer-motion';
 
-const MusicManager = () => {
+import calmAmbient from '../assets/Music/mainScreen.mp3';
+import simIntroAmbient from '../assets/Music/intro.mp3';
+import batakEnergetic from '../assets/Music/batak-energetic.mp3';
+import tennisBouncy from '../assets/Music/tennis-bouncy.mp3';
+import lightsFuturistic from '../assets/Music/lights-futuristic.mp3';
+import resultVictory from '../assets/Music/result-victory.mp3';
+import leaderboardVictory from '../assets/Music/leaderboard-victory.mp3';
+import transitionSting from '../assets/Sfx/transition-sting.mp3';
+
+interface MusicManagerProps {
+  step: string;
+}
+
+const stepToMusic: { [key: string]: string } = {
+  'main-menu': calmAmbient,
+  'sim-intro': simIntroAmbient,
+  'batak': batakEnergetic,
+  'tennis': tennisBouncy,
+  'lights': lightsFuturistic,
+  'result': resultVictory,
+  'leaderboard': leaderboardVictory,
+  'transition': transitionSting,
+};
+
+const MusicManager = ({ step }: MusicManagerProps) => {
   const audioRef = useRef<HTMLAudioElement>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTrack, setCurrentTrack] = useState<string>('');
+  const [isMuted, setIsMuted] = useState<boolean>(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    const audio = audioRef.current;
-    if (audio) {
-      audio.loop = true;
-      audio.volume = 0.5;
+    const savedMuteState = localStorage.getItem('musicMuted');
+    if (savedMuteState) {
+      setIsMuted(savedMuteState === 'true');
     }
+  }, []);
 
+  useEffect(() => {
+    const newTrack = stepToMusic[step] || calmAmbient;
+    if (!audioRef.current) return;
+
+    if (currentTrack !== newTrack) {
+      audioRef.current.src = newTrack;
+      if (!isMuted) {
+        audioRef.current.play().catch(err => console.error('Playback error:', err));
+      }
+      setCurrentTrack(newTrack);
+    }
+  }, [step, currentTrack, isMuted]);
+
+  const toggleMusic = () => {
+    if (!audioRef.current) return;
+
+    if (isMuted) {
+      audioRef.current.play().catch(err => console.error('Playback error:', err));
+      showToast('Music On');
+    } else {
+      audioRef.current.pause();
+      showToast('Music Off');
+    }
+    const newMuteState = !isMuted;
+    setIsMuted(newMuteState);
+    localStorage.setItem('musicMuted', String(newMuteState));
+  };
+
+  const showToast = (message: string) => {
+    setToastMessage(message);
+    setTimeout(() => setToastMessage(null), 2500);
+  };
+
+  useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
       if (e.key.toLowerCase() === 'm') {
         toggleMusic();
       }
     };
-
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [isPlaying]);
-
-  const toggleMusic = () => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    if (isPlaying) {
-      audio.pause();
-      showToast('Music Off');
-    } else {
-      audio.play().catch((err) => console.error('Playback failed', err));
-      showToast('Music On');
-    }
-    setIsPlaying(!isPlaying);
-  };
-
-  const showToast = (message: string) => {
-    setToastMessage(message);
-    setTimeout(() => setToastMessage(null), 2500); // hide after 2.5s
-  };
+  }, [isMuted]);
 
   return (
     <>
-      <audio ref={audioRef} src={backgroundMusic} style={{ display: 'none' }} />
-
-      {/* AnimatePresence handles mount/unmount animations */}
+      <audio ref={audioRef} style={{ display: 'none' }} loop muted={isMuted} />
       <AnimatePresence>
         {toastMessage && (
           <motion.div

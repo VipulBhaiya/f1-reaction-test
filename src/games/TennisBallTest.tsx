@@ -2,6 +2,11 @@ import React, { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import F1StartLights from '../components/F1StartLights';
 
+// SFX imports
+import catchSound from '../assets/sfx/hit.mp3';
+import missSound from '../assets/sfx/miss.mp3';
+import fallingSound from '../assets/sfx/falling.mp3';
+
 const TRIALS = 5;
 const MAX_REACTION_TIME = 1000;
 
@@ -37,7 +42,7 @@ const styles = {
   hitbox: {
     position: 'relative' as const,
     width: '40px',
-    height: '250px', // Larger than ball to include extra clickable space below
+    height: '250px',
     cursor: 'pointer',
     zIndex: 4,
   },
@@ -71,6 +76,11 @@ const styles = {
   },
 };
 
+const playSound = (src: string) => {
+  const audio = new Audio(src);
+  audio.play().catch((e) => console.error('Sound playback failed', e));
+};
+
 const TennisBallTest = ({ onComplete }: { onComplete: (score: number) => void }) => {
   const [phase, setPhase] = useState<'ready' | 'countdown' | 'playing' | 'summary'>('ready');
   const [trial, setTrial] = useState(0);
@@ -84,6 +94,23 @@ const TennisBallTest = ({ onComplete }: { onComplete: (score: number) => void })
   const [isTrialResolved, setIsTrialResolved] = useState(false);
 
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const fallingAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  const playFallingSound = () => {
+    if (fallingAudioRef.current) {
+      fallingAudioRef.current.pause();
+      fallingAudioRef.current.currentTime = 0;
+    }
+    fallingAudioRef.current = new Audio(fallingSound);
+    fallingAudioRef.current.play().catch((e) => console.error('Sound playback failed', e));
+  };
+
+  const stopFallingSound = () => {
+    if (fallingAudioRef.current) {
+      fallingAudioRef.current.pause();
+      fallingAudioRef.current.currentTime = 0;
+    }
+  };
 
   useEffect(() => {
     if (phase === 'playing' && trial < TRIALS) {
@@ -94,6 +121,8 @@ const TennisBallTest = ({ onComplete }: { onComplete: (score: number) => void })
         setStartTime(Date.now());
         setBallKey((k) => k + 1);
         setIsTrialResolved(false);
+
+        playFallingSound();
       }, delay);
     } else if (phase === 'playing' && trial >= TRIALS) {
       const hits = times.length;
@@ -112,11 +141,15 @@ const TennisBallTest = ({ onComplete }: { onComplete: (score: number) => void })
   const handleBallClick = (index: number) => {
     if (phase !== 'playing' || isTrialResolved) return;
 
+    stopFallingSound();
+
     if (index === fallingIndex && startTime !== null) {
+      playSound(catchSound);
       const reactionTime = Date.now() - startTime;
       setTimes((prev) => [...prev, reactionTime]);
       setFlashColor('green');
     } else {
+      playSound(missSound);
       setMisses((m) => m + 1);
       setFlashColor('red');
     }
@@ -131,8 +164,11 @@ const TennisBallTest = ({ onComplete }: { onComplete: (score: number) => void })
   const handleMiss = () => {
     if (isTrialResolved || fallingIndex === null) return;
 
+    stopFallingSound();
+
     setIsTrialResolved(true);
     setFlashColor('red');
+    playSound(missSound);
     setTimeout(() => {
       setMisses((m) => m + 1);
       setFallingIndex(null);

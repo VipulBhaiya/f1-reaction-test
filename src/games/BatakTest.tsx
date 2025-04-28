@@ -1,5 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import F1StartLights from '../components/F1StartLights';
+import hitSound from '../assets/sfx/hit.mp3';
+import missSound from '../assets/sfx/miss.mp3';
+import suddenDeathMissSound from '../assets/sfx/sudden-death-miss.mp3';
+import lightUpSound from '../assets/sfx/light-up.mp3';
 
 type Mode = 'Classic' | 'Speed' | 'Sudden Death' | 'Acceleration';
 
@@ -71,6 +75,11 @@ const styles: { [key: string]: React.CSSProperties } = {
   },
 };
 
+const playSound = (src: string) => {
+  const audio = new Audio(src);
+  audio.play().catch((e) => console.error('Sound playback failed', e));
+};
+
 const BatakTest: React.FC<Props> = ({ onComplete }) => {
   const [mode, setMode] = useState<Mode>('Classic');
   const [phase, setPhase] = useState<'start' | 'countdown' | 'playing' | 'summary'>('start');
@@ -84,7 +93,6 @@ const BatakTest: React.FC<Props> = ({ onComplete }) => {
   const [buttonSize, setButtonSize] = useState(Math.min(window.innerWidth, window.innerHeight) / 7);
   const [reactionTimes, setReactionTimes] = useState<number[]>([]);
   const [currentTargetTime, setCurrentTargetTime] = useState<number | null>(null);
-
 
   const flashTimeout = useRef<NodeJS.Timeout | null>(null);
 
@@ -130,20 +138,21 @@ const BatakTest: React.FC<Props> = ({ onComplete }) => {
 
     return () => clearInterval(interval);
   }, [phase, mode, flashSpeed]);
-  
+
   const flashNewTarget = () => {
+    playSound(lightUpSound);
     const newIndex = Math.floor(Math.random() * rows * cols);
     setTargetIndex(newIndex);
     setCurrentTargetTime(Date.now());
-  
+
     if (flashTimeout.current) clearTimeout(flashTimeout.current);
     flashTimeout.current = setTimeout(() => {
       setTargetIndex(null);
     }, 700);
   };
-  
 
   const triggerMissFlash = () => {
+    playSound(suddenDeathMissSound);
     setShowMissFlash(true);
     setTimeout(() => setShowMissFlash(false), 150);
   };
@@ -161,12 +170,14 @@ const BatakTest: React.FC<Props> = ({ onComplete }) => {
 
   const handleClick = (i: number) => {
     if (phase !== 'playing') return;
-  
+
     if (i === targetIndex && currentTargetTime !== null) {
+      playSound(hitSound);
       const reaction = Date.now() - currentTargetTime;
       setReactionTimes((prev) => [...prev, reaction]);
       setHits((h) => h + 1);
     } else {
+      playSound(missSound);
       setMisses((m) => m + 1);
       triggerMissFlash();
       if (mode === 'Sudden Death') setTimeLeft(0);
@@ -174,11 +185,11 @@ const BatakTest: React.FC<Props> = ({ onComplete }) => {
     setTargetIndex(null);
     setCurrentTargetTime(null);
   };
-  
 
   const handleMissClick = () => {
     if (phase !== 'playing') return;
 
+    playSound(missSound);
     setMisses((m) => m + 1);
     triggerMissFlash();
     setTargetIndex(null);

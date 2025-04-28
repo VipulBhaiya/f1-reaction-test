@@ -1,6 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 import F1StartLights from '../components/F1StartLights';
 
+// Importing sound effects
+import goSfx from '../assets/Sfx/go.mp3';
+import successSfx from '../assets/Sfx/hit.mp3';
+import errorSfx from '../assets/Sfx/miss.mp3';
+
 const TRIALS = 5;
 const MAX_LIGHT_TIME = 1000;
 
@@ -53,6 +58,11 @@ const LightsOutTest = ({ onComplete }: { onComplete: (score: number) => void }) 
   const [startTime, setStartTime] = useState<number | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Initialize Audio objects
+  const goAudio = useRef(new Audio(goSfx));
+  const successAudio = useRef(new Audio(successSfx));
+  const errorAudio = useRef(new Audio(errorSfx));
+
   useEffect(() => {
     if (phase === 'waiting') {
       const delay = Math.random() * 3000 + 2000;
@@ -67,11 +77,18 @@ const LightsOutTest = ({ onComplete }: { onComplete: (score: number) => void }) 
     };
   }, [phase]);
 
+  useEffect(() => {
+    if (phase === 'ready') {
+      goAudio.current.play();
+    }
+  }, [phase]);
+
   const handleClick = () => {
     if (phase === 'ready' && startTime) {
       const reactionTime = Date.now() - startTime;
       setReactionTimes((prev) => [...prev, reactionTime]);
       setHits((h) => h + 1);
+      successAudio.current.play();
       setStartTime(null);
       if (trial + 1 >= TRIALS) {
         setPhase('summary');
@@ -82,6 +99,7 @@ const LightsOutTest = ({ onComplete }: { onComplete: (score: number) => void }) 
     } else if (phase === 'waiting') {
       setMisses((m) => m + 1);
       navigator.vibrate?.(200);
+      errorAudio.current.play();
       setPhase('tooEarly');
       setTimeout(() => {
         if (trial + 1 >= TRIALS) {
@@ -105,9 +123,7 @@ const LightsOutTest = ({ onComplete }: { onComplete: (score: number) => void }) 
   const totalTime = reactionTimes.reduce((a, b) => a + b, 0);
   const avgTimePerLight = hits > 0 ? totalTime / hits : MAX_LIGHT_TIME;
   const accuracy = hits / (hits + misses || 1);
-  const score =
-    (accuracy * 65) +
-    (35 * (1 - Math.min(avgTimePerLight, MAX_LIGHT_TIME) / MAX_LIGHT_TIME));
+  const score = (accuracy * 65) + (35 * (1 - Math.min(avgTimePerLight, MAX_LIGHT_TIME) / MAX_LIGHT_TIME));
 
   useEffect(() => {
     if (phase === 'summary') {

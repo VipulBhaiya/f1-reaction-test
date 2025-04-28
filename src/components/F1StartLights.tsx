@@ -1,4 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
+
+// Import SFX
+import tickSfx from '../assets/Sfx/click.mp3';
+import goSfx from '../assets/Sfx/start_woosh.mp3';
 
 const styles = {
   container: {
@@ -24,8 +28,8 @@ const styles = {
 
 type Props = {
   onComplete: () => void;
-  delayPerLight?: number;   // default: 800ms
-  holdDuration?: number;    // default: 1000ms
+  delayPerLight?: number;
+  holdDuration?: number;
 };
 
 const F1StartLights: React.FC<Props> = ({
@@ -36,13 +40,21 @@ const F1StartLights: React.FC<Props> = ({
   const [litCount, setLitCount] = useState(0);
   const [lightsOut, setLightsOut] = useState(false);
 
+  const tickAudio = useRef(new Audio(tickSfx));
+  const goAudio = useRef(new Audio(goSfx));
+
   useEffect(() => {
     if (litCount < 5) {
-      const timer = setTimeout(() => setLitCount((c) => c + 1), delayPerLight);
+      const timer = setTimeout(() => {
+        tickAudio.current.currentTime = 0;
+        tickAudio.current.play();
+        setLitCount((c) => c + 1);
+      }, delayPerLight);
       return () => clearTimeout(timer);
     } else {
       const hold = setTimeout(() => {
         setLightsOut(true);
+        goAudio.current.play();
         onComplete();
       }, holdDuration);
       return () => clearTimeout(hold);
