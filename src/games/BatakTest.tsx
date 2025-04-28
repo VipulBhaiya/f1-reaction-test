@@ -82,6 +82,9 @@ const BatakTest: React.FC<Props> = ({ onComplete }) => {
   const [showMissFlash, setShowMissFlash] = useState(false);
   const [flashSpeed, setFlashSpeed] = useState(1000);
   const [buttonSize, setButtonSize] = useState(Math.min(window.innerWidth, window.innerHeight) / 7);
+  const [reactionTimes, setReactionTimes] = useState<number[]>([]);
+  const [currentTargetTime, setCurrentTargetTime] = useState<number | null>(null);
+
 
   const flashTimeout = useRef<NodeJS.Timeout | null>(null);
 
@@ -127,16 +130,18 @@ const BatakTest: React.FC<Props> = ({ onComplete }) => {
 
     return () => clearInterval(interval);
   }, [phase, mode, flashSpeed]);
-
+  
   const flashNewTarget = () => {
     const newIndex = Math.floor(Math.random() * rows * cols);
     setTargetIndex(newIndex);
-
+    setCurrentTargetTime(Date.now());
+  
     if (flashTimeout.current) clearTimeout(flashTimeout.current);
     flashTimeout.current = setTimeout(() => {
       setTargetIndex(null);
     }, 700);
   };
+  
 
   const triggerMissFlash = () => {
     setShowMissFlash(true);
@@ -150,12 +155,16 @@ const BatakTest: React.FC<Props> = ({ onComplete }) => {
     setFlashSpeed(1000);
     setTimeLeft(totalTime);
     setPhase('countdown');
+    setReactionTimes([]);
+    setCurrentTargetTime(null);
   };
 
   const handleClick = (i: number) => {
     if (phase !== 'playing') return;
-
-    if (i === targetIndex) {
+  
+    if (i === targetIndex && currentTargetTime !== null) {
+      const reaction = Date.now() - currentTargetTime;
+      setReactionTimes((prev) => [...prev, reaction]);
       setHits((h) => h + 1);
     } else {
       setMisses((m) => m + 1);
@@ -163,7 +172,9 @@ const BatakTest: React.FC<Props> = ({ onComplete }) => {
       if (mode === 'Sudden Death') setTimeLeft(0);
     }
     setTargetIndex(null);
+    setCurrentTargetTime(null);
   };
+  
 
   const handleMissClick = () => {
     if (phase !== 'playing') return;
@@ -221,8 +232,13 @@ const BatakTest: React.FC<Props> = ({ onComplete }) => {
         <h2>🏁 Test Complete</h2>
         <p>✅ Hits: {hits}</p>
         <p>❌ Misses: {misses}</p>
+        <p>⏱️ Avg Reaction:{' '}
+          {reactionTimes.length > 0
+            ? `${Math.round(reactionTimes.reduce((a, b) => a + b, 0) / reactionTimes.length)} ms`
+            : 'N/A'}
+        </p>
         <p>🎯 Accuracy: {(hits / (hits + misses || 1) * 100).toFixed(1)}%</p>
-        <p>🏆 Score: {score}</p>
+        <p>🔥 Score: {score}</p>
         <button onClick={handleSummaryClose} style={styles.button}>Continue</button>
       </div>
     );
@@ -233,7 +249,7 @@ const BatakTest: React.FC<Props> = ({ onComplete }) => {
       {showMissFlash && <div style={styles.flashOverlay} />}
       <div style={{ position: 'absolute', top: 20 }}>
         <h2>⏱ Time Left: {timeLeft}s</h2>
-        <h3>🎯 Hits: {hits} | ❌ Misses: {misses}</h3>
+        <h3>✅ Hits: {hits} | ❌ Misses: {misses}</h3>
       </div>
       <div style={styles.grid}>
         {Array.from({ length: rows * cols }).map((_, i) => (

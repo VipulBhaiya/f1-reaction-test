@@ -33,7 +33,13 @@ const styles = {
     position: 'absolute' as const,
     top: 0,
     zIndex: 2,
+  },
+  hitbox: {
+    position: 'relative' as const,
+    width: '40px',
+    height: '250px', // Larger than ball to include extra clickable space below
     cursor: 'pointer',
+    zIndex: 4,
   },
   hand: {
     width: '40px',
@@ -75,8 +81,9 @@ const TennisBallTest = ({ onComplete }: { onComplete: (score: number) => void })
   const [finalScore, setFinalScore] = useState<number | null>(null);
   const [flashColor, setFlashColor] = useState<'green' | 'red' | null>(null);
   const [ballKey, setBallKey] = useState(0);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [isTrialResolved, setIsTrialResolved] = useState(false);
+
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (phase === 'playing' && trial < TRIALS) {
@@ -152,26 +159,30 @@ const TennisBallTest = ({ onComplete }: { onComplete: (score: number) => void })
       return (
         <div key={index} style={{ position: 'absolute', left: xPosition, top: 0 }}>
           {isFalling && (
-            <motion.div
-              key={ballKey}
-              initial={{ y: 0, scaleX: 1, scaleY: 1 }}
-              animate={{
-                y: 360,
-                scaleX: isTrialResolved ? [1, 1.3, 1] : 1,
-                scaleY: isTrialResolved ? [1, 0.5, 1] : 1,
-              }}
-              transition={{
-                y: { duration: 1.2, ease: 'easeIn' },
-                scaleX: { duration: 0.3, ease: 'easeOut' },
-                scaleY: { duration: 0.3, ease: 'easeOut' },
-              }}
-              onAnimationComplete={handleMiss}
-              style={{
-                ...styles.ballStyle,
-                backgroundColor: index === 0 ? '#00e676' : '#2196f3',
-              }}
+            <div
               onClick={() => handleBallClick(index)}
-            />
+              style={styles.hitbox}
+            >
+              <motion.div
+                key={ballKey}
+                initial={{ y: 0, scaleX: 1, scaleY: 1 }}
+                animate={{
+                  y: 360,
+                  scaleX: isTrialResolved ? [1, 1.3, 1] : 1,
+                  scaleY: isTrialResolved ? [1, 0.5, 1] : 1,
+                }}
+                transition={{
+                  y: { duration: 1.2, ease: 'easeIn' },
+                  scaleX: { duration: 0.3, ease: 'easeOut' },
+                  scaleY: { duration: 0.3, ease: 'easeOut' },
+                }}
+                onAnimationComplete={handleMiss}
+                style={{
+                  ...styles.ballStyle,
+                  backgroundColor: index === 0 ? '#00e676' : '#2196f3',
+                }}
+              />
+            </div>
           )}
           {isFalling && (
             <motion.div
@@ -223,10 +234,10 @@ const TennisBallTest = ({ onComplete }: { onComplete: (score: number) => void })
         return (
           <>
             <h2>🏁 Test Summary</h2>
-            <p>🎯 Hits: {hits}</p>
+            <p>✅ Hits: {hits}</p>
             <p>❌ Misses: {misses}</p>
-            <p>⏱ Avg Reaction: {Math.round(avgTime)}ms</p>
-            <p>📊 Accuracy: {(accuracy * 100).toFixed(1)}%</p>
+            <p>⏱️ Avg Reaction: {Math.round(avgTime)}ms</p>
+            <p>🎯 Accuracy: {(accuracy * 100).toFixed(1)}%</p>
             <h3>🔥 Score: {finalScore}</h3>
             <button style={styles.button} onClick={() => onComplete(finalScore || 0)}>Next</button>
           </>

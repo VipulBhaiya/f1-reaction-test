@@ -169,10 +169,10 @@ const LightsOutTest = ({ onComplete }: { onComplete: (score: number) => void }) 
         return (
           <>
             <h2>🏁 Test Summary</h2>
-            <p>🎯 Hits: {hits}</p>
+            <p>✅ Hits: {hits}</p>
             <p>❌ Misses: {misses}</p>
             <p>⏱️ Avg Reaction: {Math.round(avgTimePerLight)} ms</p>
-            <p>📊 Accuracy: {(accuracy * 100).toFixed(1)}%</p>
+            <p>🎯 Accuracy: {(accuracy * 100).toFixed(1)}%</p>
             <h3>🔥 Score: {Math.round(score)}</h3>
             <button style={styles.button} onClick={() => setPhase('start')}>
               Restart

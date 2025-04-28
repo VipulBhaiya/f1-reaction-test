@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+
 import BatakTest from './games/BatakTest';
 import TennisBallTest from './games/TennisBallTest';
 import LightsOutTest from './games/LightsOutTest';
@@ -9,6 +10,7 @@ import Results from './components/Results';
 import MainMenu from './components/MainMenu';
 import SimIntro from './components/SimIntro';
 import TransitionScreen from './components/TransitionScreen';
+import MusicManager from './components/MusicManager';
 
 type Step =
   | 'main-menu'
@@ -28,6 +30,16 @@ const App = () => {
   const [scores, setScores] = useState<number[]>([]);
   const [devMode, setDevMode] = useState(false);
 
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() === 'd') {
+        setDevMode((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, []);
+
   const goToStep = (target: Step, message: string, duration = 1600) => {
     setTransitionMessage(message);
     setNextStep(target);
@@ -38,9 +50,17 @@ const App = () => {
   const handleComplete = (score: number) => {
     setScores((prev) => [...prev, score]);
     if (!devMode) {
-      if (step === 'batak') goToStep('tennis', 'Next Up: Tennis Ball Catch');
-      else if (step === 'tennis') goToStep('lights', 'Final Test: Lights Out');
-      else if (step === 'lights') goToStep('result', 'Calculating Results...', 1400);
+      switch (step) {
+        case 'batak':
+          goToStep('tennis', 'Next Up: Tennis Ball Catch');
+          break;
+        case 'tennis':
+          goToStep('lights', 'Final Test: Lights Out');
+          break;
+        case 'lights':
+          goToStep('result', 'Calculating Results...', 1400);
+          break;
+      }
     }
   };
 
@@ -123,35 +143,25 @@ const App = () => {
   };
 
   return (
-    <div>
+    <div className="relative min-h-screen overflow-hidden bg-black text-white">
+      {/* Floating Music Button */}
+      <div className="absolute bottom-6 right-6 z-30">
+        <MusicManager />
+      </div>
+
+      {/* Dev Mode (press D to toggle) */}
       {devMode && (
         <DevMenu
           currentStep={step}
-          onSelectTest={(t) => setStep(t)}
+          onSelectTest={(target) => setStep(target)}
           onExitDevMode={() => setDevMode(false)}
         />
       )}
 
-      {!devMode && (
-        <button
-          onClick={() => setDevMode(true)}
-          style={{
-            position: 'absolute',
-            top: 10,
-            right: 10,
-            padding: '8px 12px',
-            fontSize: '12px',
-            backgroundColor: '#444',
-            color: '#fff',
-            borderRadius: '6px',
-            cursor: 'pointer',
-          }}
-        >
-          Enter Dev Mode
-        </button>
-      )}
-
-      <AnimatePresence mode="wait">{renderStep()}</AnimatePresence>
+      {/* Main Game Screens */}
+      <AnimatePresence mode="wait">
+        {renderStep()}
+      </AnimatePresence>
     </div>
   );
 };
