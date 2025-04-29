@@ -14,16 +14,19 @@ const styles = {
   container: {
     height: '100vh',
     width: '100vw',
-    backgroundColor: '#111',
-    color: 'white',
-    fontFamily: 'sans-serif',
+    background: 'radial-gradient(circle at center, #1a1a1a 0%, #0e0e0e 80%)',
+    color: '#ffffff',
+    fontFamily: "'Poppins', sans-serif",
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
     flexDirection: 'column' as const,
     overflow: 'hidden',
     position: 'relative' as const,
-  },
+    textAlign: 'center' as const,
+    boxSizing: 'border-box' as const,
+    padding: '0 20px',
+  },  
   ballsRow: {
     position: 'relative' as const,
     width: '100%',
@@ -32,49 +35,56 @@ const styles = {
     marginTop: '40px',
   },
   ballStyle: {
-    width: '40px',
-    height: '40px',
+    width: '50px',
+    height: '50px',
     borderRadius: '50%',
     position: 'absolute' as const,
     top: 0,
     zIndex: 2,
+    boxShadow: '0 0 25px 8px rgba(225, 6, 0, 0.6)',
+    transition: 'transform 0.2s ease',
   },
   hitbox: {
     position: 'relative' as const,
-    width: '40px',
-    height: '250px',
+    width: '60px',
+    height: '260px',
     cursor: 'pointer',
     zIndex: 4,
   },
   hand: {
-    width: '40px',
-    height: '20px',
-    backgroundColor: '#fff',
+    width: '50px',
+    height: '24px',
+    backgroundColor: '#ffffff',
     borderRadius: '20px 20px 0 0',
     position: 'absolute' as const,
     top: '-25px',
     left: '0',
     zIndex: 3,
+    boxShadow: '0 0 12px rgba(255, 255, 255, 0.4)',
   },
   floor: {
     position: 'absolute' as const,
     bottom: 0,
     height: '40px',
     width: '100%',
-    backgroundColor: '#2e7d32',
-    borderTop: '4px solid #fff',
+    backgroundColor: '#222',
+    borderTop: '4px solid #e10600',
     zIndex: 1,
   },
   button: {
-    padding: '10px 20px',
-    fontSize: '1rem',
-    borderRadius: '8px',
-    backgroundColor: '#ffc107',
-    border: 'none',
+    padding: '14px 28px',
+    fontSize: '1.2rem',
+    borderRadius: '10px',
+    backgroundColor: '#e10600',
+    border: '2px solid #e10600',
+    color: '#ffffff',
+    fontWeight: 'bold',
     cursor: 'pointer',
-    marginTop: '20px',
+    transition: 'all 0.3s ease',
+    marginTop: '24px',
   },
 };
+
 
 const playSound = (src: string) => {
   const audio = new Audio(src);
@@ -241,45 +251,108 @@ const TennisBallTest = ({ onComplete }: { onComplete: (score: number) => void })
       case 'ready':
         return (
           <>
-            <h2>Tennis Ball Catch</h2>
-            <p>Click the falling ball as fast as you can.</p>
-            <button style={styles.button} onClick={startTest}>Ready</button>
+            <h1 style={{
+              fontSize: '3rem',
+              fontWeight: 300,
+              color: '#e10600',
+              textShadow: '0 0 10px #e10600',
+              marginBottom: '16px',
+            }}>
+              🎾 Tennis Ball Reflex Test
+            </h1>
+            <p style={{
+              fontSize: '1.2rem',
+              color: '#bbbbbb',
+              maxWidth: '500px',
+              marginBottom: '32px',
+            }}>
+              Click the falling ball as quickly and accurately as you can.
+              There are {TRIALS} trials — stay focused!
+            </p>
+            <button
+              style={styles.button}
+              onClick={startTest}
+              onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.05)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+            >
+              Start
+            </button>
           </>
         );
+  
       case 'countdown':
         return (
           <>
-            <h2>🎬 Get Ready...</h2>
+            <h2 style={{
+              fontSize: '2rem',
+              color: '#ffffff',
+              marginBottom: '20px',
+            }}>
+              🎬 Get Ready...
+            </h2>
             <F1StartLights onComplete={() => setPhase('playing')} />
           </>
         );
+  
       case 'playing':
         return (
           <>
-            <h2>Trial {trial + 1} of {TRIALS}</h2>
+            <h2 style={{ fontSize: '1.8rem', color: '#e10600', marginBottom: '16px' }}>
+              Trial {trial + 1} of {TRIALS}
+            </h2>
             <div style={styles.ballsRow}>
               {renderBalls()}
               <div style={styles.floor} />
             </div>
           </>
         );
+  
       case 'summary':
         const hits = times.length;
         const accuracy = hits / TRIALS;
         const avgTime = hits > 0 ? times.reduce((a, b) => a + b, 0) / hits : MAX_REACTION_TIME;
+  
         return (
           <>
-            <h2>🏁 Test Summary</h2>
-            <p>✅ Hits: {hits}</p>
-            <p>❌ Misses: {misses}</p>
-            <p>⏱️ Avg Reaction: {Math.round(avgTime)}ms</p>
-            <p>🎯 Accuracy: {(accuracy * 100).toFixed(1)}%</p>
-            <h3>🔥 Score: {finalScore}</h3>
-            <button style={styles.button} onClick={() => onComplete(finalScore || 0)}>Next</button>
+            <h1 style={{
+              fontSize: '2.5rem',
+              fontWeight: 300,
+              color: '#e10600',
+              textShadow: '0 0 8px #e10600',
+              marginBottom: '20px',
+            }}>
+              🏁 Test Complete!
+            </h1>
+  
+            <div style={{
+              marginTop: '12px',
+              backgroundColor: '#1a1a1a',
+              padding: '20px 30px',
+              borderRadius: '12px',
+              boxShadow: '0 0 12px rgba(225, 6, 0, 0.5)',
+              width: '300px',
+              textAlign: 'left',
+              fontSize: '1.1rem',
+            }}>
+              <p>✅ Hits: <strong>{hits}</strong></p>
+              <p>❌ Misses: <strong>{misses}</strong></p>
+              <p>⏱️ Avg Reaction: <strong>{Math.round(avgTime)} ms</strong></p>
+              <p>🎯 Accuracy: <strong>{(accuracy * 100).toFixed(1)}%</strong></p>
+              <p>🔥 Score: <strong>{finalScore}</strong></p>
+            </div>
+  
+            <button
+              style={{ ...styles.button, marginTop: '32px', width: '220px' }}
+              onClick={() => onComplete(finalScore || 0)}
+              onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.05)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)' }}
+            >
+              Continue
+            </button>
           </>
         );
     }
-  };
+  };  
 
   return (
     <motion.div

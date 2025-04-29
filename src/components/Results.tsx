@@ -67,14 +67,15 @@ const Results: React.FC<ResultsProps> = ({
   return (
     <div style={styles.wrapper}>
       <div style={styles.container}>
-        <h1 style={styles.title}>🏁 Results</h1>
+        <h1 style={styles.title}>🏁 Final Results</h1>
+
         <div style={styles.scoreBox}>
-          <p>🟡 Batak: {usedScores[0]}/100</p>
-          <p>🎾 Tennis: {usedScores[1]}/100</p>
-          <p>💡 Lights: {usedScores[2]}/100</p>
+          <p>🟡 Batak: {usedScores[0]} / 100</p>
+          <p>🎾 Tennis: {usedScores[1]} / 100</p>
+          <p>💡 Lights: {usedScores[2]} / 100</p>
         </div>
 
-        <h2 style={styles.subheader}>Final Score: {finalScore}/100</h2>
+        <h2 style={styles.subheader}>Final Score: {finalScore} / 100</h2>
         <h2 style={styles.subheader}>Category: {category}</h2>
 
         {!submitted && !devMode ? (
@@ -86,25 +87,21 @@ const Results: React.FC<ResultsProps> = ({
               placeholder="Enter your name (optional)"
               style={styles.input}
             />
-            <button onClick={saveScore} style={styles.button}>
+            <button onClick={saveScore} style={styles.mainButton}>
               Submit Score
             </button>
           </div>
         ) : devMode ? (
-          <p style={{ marginTop: '16px', fontWeight: 'bold', color: '#ccc' }}>
-            🛠 Dev Mode: Score not submitted
-          </p>
+          <p style={styles.devMessage}>🛠 Dev Mode: Score not submitted</p>
         ) : (
-          <p style={{ marginTop: '16px', fontWeight: 'bold', color: '#0f0' }}>
-            ✅ Score submitted!
-          </p>
+          <p style={styles.successMessage}>✅ Score submitted!</p>
         )}
 
         <div style={styles.buttonGroup}>
-          <button onClick={onRestart} style={styles.button}>
+          <button onClick={onRestart} style={styles.secondaryButton}>
             Restart
           </button>
-          <button onClick={onLeaderboard} style={styles.button}>
+          <button onClick={onLeaderboard} style={styles.secondaryButton}>
             Leaderboard
           </button>
         </div>
@@ -115,66 +112,99 @@ const Results: React.FC<ResultsProps> = ({
 
 const styles: { [key: string]: React.CSSProperties } = {
   wrapper: {
-    backgroundColor: '#1c1c1c',
-    color: 'white',
-    width: '100vw',
-    height: '100vh',
+    position: 'fixed',
+    top: 0, left: 0, right: 0, bottom: 0,
+    background: 'radial-gradient(circle at center, #1a1a1a 0%, #0e0e0e 80%)',
+    color: '#ffffff',
+    fontFamily: "'Poppins', sans-serif",
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
+    padding: '20px',
   },
   container: {
+    backgroundColor: '#111',
+    borderRadius: '16px',
+    padding: '32px',
+    boxShadow: '0 0 20px #e10600aa',
     textAlign: 'center',
+    width: '400px',
+    maxWidth: '90%',
     display: 'flex',
     flexDirection: 'column',
-    gap: 12,
-    padding: '40px 24px',
-    borderRadius: '16px',
-    backgroundColor: '#2c2c2c',
-    boxShadow: '0 0 20px rgba(0,0,0,0.5)',
+    gap: '16px',
   },
   title: {
     fontSize: '2.5rem',
-    marginBottom: 12,
+    color: '#e10600',
+    textShadow: '0 0 10px #e10600',
+    marginBottom: '16px',
   },
   scoreBox: {
     fontSize: '1.2rem',
     lineHeight: '1.8rem',
-    marginBottom: 16,
+    marginBottom: '24px',
   },
   subheader: {
     fontSize: '1.5rem',
+    color: '#ffffff',
     margin: '8px 0',
   },
   inputSection: {
-    marginTop: 24,
+    marginTop: '24px',
     display: 'flex',
     flexDirection: 'column',
-    alignItems: 'center',
-    gap: 8,
+    gap: '12px',
   },
   input: {
     padding: '10px',
     fontSize: '1rem',
-    borderRadius: 10,
-    width: '260px',
-    border: '1px solid #ccc',
+    borderRadius: '8px',
+    width: '100%',
+    border: '1px solid #555',
+    backgroundColor: '#1a1a1a',
+    color: '#ffffff',
+    outline: 'none',
   },
-  button: {
-    backgroundColor: '#ffc107',
-    color: '#000',
+  mainButton: {
+    backgroundColor: '#e10600',
+    color: '#ffffff',
     border: 'none',
-    padding: '10px 20px',
-    borderRadius: 10,
-    cursor: 'pointer',
+    padding: '12px 24px',
+    borderRadius: '8px',
     fontWeight: 'bold',
     fontSize: '1rem',
+    cursor: 'pointer',
+    transition: 'all 0.3s ease',
+  },
+  secondaryButton: {
+    backgroundColor: '#333',
+    color: '#ffffff',
+    border: '2px solid #e10600',
+    padding: '10px 20px',
+    borderRadius: '8px',
+    fontWeight: 'bold',
+    fontSize: '1rem',
+    cursor: 'pointer',
+    transition: 'all 0.3s ease',
+  },
+  successMessage: {
+    color: '#00ff88',
+    fontWeight: 'bold',
+    marginTop: '12px',
+  },
+  devMessage: {
+    color: '#ffcc00',
+    fontWeight: 'bold',
+    marginTop: '12px',
   },
   buttonGroup: {
-    marginTop: 30,
+    marginTop: '24px',
     display: 'flex',
     justifyContent: 'center',
-    gap: 12,
+    gap: '16px',
+    flexWrap: 'wrap' as const,
   },
 };
 

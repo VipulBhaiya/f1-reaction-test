@@ -38,7 +38,7 @@ const Leaderboard: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   return (
     <div style={styles.wrapper}>
       <div style={styles.container}>
-        <h2 style={styles.title}>🏆 Leaderboard - Top 10</h2>
+        <h2 style={styles.title}>🏆 Top 10 Leaderboard</h2>
         <table style={styles.table}>
           <thead>
             <tr>
@@ -58,28 +58,21 @@ const Leaderboard: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 >
                   {entry.name || 'Anonymous'}
                 </td>
-                <td style={styles.td}>{entry.average}</td>
+                <td style={styles.td}>{Math.round(entry.average)}</td>
                 <td style={styles.td}>{entry.category}</td>
               </tr>
             ))}
           </tbody>
         </table>
-        <button onClick={onBack} style={{ ...styles.button, backgroundColor: '#28a745' }}>
-          Back to Results
+        <button onClick={onBack} style={styles.backButton}>
+          Return
         </button>
       </div>
 
-      {/* Stats panel positioned next to the table */}
-      <div
-        style={{
-          ...styles.statsPanel,
-          opacity: selectedUser ? 1 : 0,
-          pointerEvents: selectedUser ? 'auto' : 'none',
-        }}
-      >
-        {selectedUser && (
+      {selectedUser && (
+        <div style={styles.statsPanel}>
+          <h3 style={styles.statsTitle}>📊 {selectedUser.name || 'Anonymous'}</h3>
           <div style={styles.statsBox}>
-            <h3>📊 Stats for {selectedUser.name || 'Anonymous'}</h3>
             <p><strong>Category:</strong> {selectedUser.category}</p>
             <p><strong>Score:</strong> {selectedUser.average}</p>
             {selectedUser.batak !== undefined && <p><strong>Batak:</strong> {selectedUser.batak}</p>}
@@ -89,98 +82,119 @@ const Leaderboard: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             {selectedUser.hits !== undefined && <p><strong>Hits:</strong> {selectedUser.hits}</p>}
             {selectedUser.misses !== undefined && <p><strong>Misses:</strong> {selectedUser.misses}</p>}
             {selectedUser.averageTime !== undefined && <p><strong>Avg Light Time:</strong> {selectedUser.averageTime.toFixed(2)} ms</p>}
-            <button onClick={() => setSelectedUser(null)} style={{ ...styles.button, backgroundColor: '#dc3545' }}>
-              Close
-            </button>
           </div>
-        )}
-      </div>
+          <button onClick={() => setSelectedUser(null)} style={styles.closeButton}>
+            ❌ Close
+          </button>
+        </div>
+      )}
     </div>
   );
 };
 
 const styles: { [key: string]: React.CSSProperties } = {
   wrapper: {
-    backgroundColor: '#1c1c1c',
-    color: 'white',
-    width: '100vw',
-    height: '100vh',
-    overflow: 'hidden',
+    position: 'fixed',
+    top: 0, left: 0, right: 0, bottom: 0,
+    background: 'radial-gradient(circle at center, #1a1a1a 0%, #0e0e0e 80%)',
+    color: '#ffffff',
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
-    position: 'relative',
-    boxSizing: 'border-box',
-    padding: 20,
+    overflow: 'hidden',
+    fontFamily: "'Poppins', sans-serif",
+    padding: '20px',
   },
   container: {
-    backgroundColor: '#2c2c2c',
+    backgroundColor: '#111',
     borderRadius: '16px',
     padding: '24px',
-    boxShadow: '0 0 20px rgba(0,0,0,0.5)',
+    boxShadow: '0 0 20px #e10600aa',
     width: '400px',
-    maxHeight: '80vh',
-    overflowY: 'auto',
     textAlign: 'center',
-    zIndex: 1,
+    zIndex: 2,
   },
   title: {
-    fontSize: '1.75rem',
+    fontSize: '2rem',
+    color: '#e10600',
     marginBottom: '16px',
+    textShadow: '0 0 8px #e10600',
   },
   table: {
     width: '100%',
     borderCollapse: 'collapse',
-    fontSize: '0.9rem',
-    backgroundColor: '#333',
+    fontSize: '0.95rem',
+    backgroundColor: '#1a1a1a',
     borderRadius: '10px',
+    overflow: 'hidden',
   },
   th: {
-    padding: '8px 12px',
-    backgroundColor: '#444',
-    borderBottom: '2px solid #555',
+    padding: '10px 12px',
+    backgroundColor: '#2c2c2c',
+    borderBottom: '2px solid #e10600',
   },
   td: {
     padding: '8px 12px',
-    borderBottom: '1px solid #555',
+    borderBottom: '1px solid #333',
     textAlign: 'center',
+    color: '#ccc',
   },
   clickableName: {
     padding: '8px 12px',
-    color: '#ffc107',
+    color: '#00eaff',
     textDecoration: 'underline',
     cursor: 'pointer',
-    borderBottom: '1px solid #555',
+    borderBottom: '1px solid #333',
     textAlign: 'center',
   },
-  button: {
+  backButton: {
     marginTop: '20px',
-    padding: '10px 20px',
+    padding: '12px 20px',
     fontSize: '16px',
+    backgroundColor: '#e10600',
+    color: '#ffffff',
+    fontWeight: 'bold',
     borderRadius: '8px',
     border: 'none',
-    color: '#fff',
-    fontWeight: 'bold',
     cursor: 'pointer',
     width: '100%',
+    transition: 'all 0.3s ease',
   },
   statsPanel: {
     position: 'absolute',
-    left: 'calc(50% + 240px)', // 200px (half width) + 40px margin
+    right: '5%',
     top: '50%',
     transform: 'translateY(-50%)',
-    backgroundColor: '#242',
-    borderRadius: '16px',
+    backgroundColor: '#111',
     padding: '24px',
-    width: '300px',
-    maxHeight: '80vh',
-    overflowY: 'auto',
-    transition: 'opacity 0.4s ease',
-    zIndex: 0,
+    borderRadius: '16px',
+    boxShadow: '0 0 20px #00eaff88',
+    width: '320px',
+    zIndex: 1,
+    color: '#ffffff',
+  },
+  statsTitle: {
+    fontSize: '1.5rem',
+    color: '#00eaff',
+    textAlign: 'center',
+    marginBottom: '12px',
   },
   statsBox: {
-    color: 'white',
     textAlign: 'left',
+    fontSize: '0.95rem',
+  },
+  closeButton: {
+    marginTop: '20px',
+    padding: '10px 18px',
+    fontSize: '16px',
+    backgroundColor: '#dc3545',
+    color: '#ffffff',
+    fontWeight: 'bold',
+    borderRadius: '8px',
+    border: 'none',
+    cursor: 'pointer',
+    width: '100%',
+    transition: 'all 0.3s ease',
   },
 };
 

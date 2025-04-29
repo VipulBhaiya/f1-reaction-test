@@ -13,18 +13,17 @@ type Props = {
 
 const styles: { [key: string]: React.CSSProperties } = {
   container: {
-    height: '100vh',
-    width: '100vw',
-    backgroundColor: '#121212',
-    color: 'white',
+    position: 'fixed' as const,
+    top: 0, left: 0, right: 0, bottom: 0,
+    background: 'radial-gradient(circle at center, #1a1a1a 0%, #0e0e0e 80%)',
+    color: '#ffffff',
+    fontFamily: "'Poppins', sans-serif",
     display: 'flex',
-    flexDirection: 'column',
+    flexDirection: 'column' as const,
     alignItems: 'center',
     justifyContent: 'center',
-    fontFamily: 'sans-serif',
-    textAlign: 'center',
+    textAlign: 'center' as const,
     gap: 12,
-    position: 'relative',
     overflow: 'hidden',
   },
   grid: {
@@ -33,35 +32,42 @@ const styles: { [key: string]: React.CSSProperties } = {
     gridTemplateRows: 'repeat(4, 1fr)',
     gap: '16px',
     zIndex: 1,
+    marginTop: '40px',
   },
   circleButton: {
     borderRadius: '50%',
-    backgroundColor: '#555',
-    transition: 'opacity 1s ease-out, background-color 0.1s ease-in',
+    backgroundColor: '#333',
+    transition: 'opacity 0.5s ease, background-color 0.3s ease, transform 0.2s ease',
     cursor: 'pointer',
-    opacity: 0.5,
+    opacity: 0.6,
   },
   active: {
-    backgroundColor: '#ffc107',
+    backgroundColor: '#e10600',
     opacity: 1,
-    boxShadow: '0 0 25px 8px rgba(255, 255, 0, 0.7)',
+    boxShadow: '0 0 30px 10px rgba(225, 6, 0, 0.7)',
+    transform: 'scale(1.1)',
   },
   button: {
-    padding: '10px 20px',
-    fontSize: '1rem',
+    padding: '14px 30px',
+    fontSize: '1.2rem',
     borderRadius: '10px',
-    border: 'none',
-    backgroundColor: '#ffc107',
+    backgroundColor: '#e10600',
+    border: '2px solid #e10600',
+    color: '#ffffff',
+    fontWeight: 'bold',
     cursor: 'pointer',
-    marginTop: 16,
+    transition: 'all 0.3s ease',
+    marginTop: '20px',
   },
   select: {
     padding: '10px',
     fontSize: '1rem',
-    borderRadius: 10,
-    backgroundColor: '#222',
-    color: 'white',
+    borderRadius: '10px',
+    backgroundColor: '#1a1a1a',
+    color: '#ffffff',
     border: '1px solid #555',
+    marginTop: '12px',
+    width: '220px',
   },
   flashOverlay: {
     position: 'absolute',
@@ -69,9 +75,10 @@ const styles: { [key: string]: React.CSSProperties } = {
     left: 0,
     width: '100vw',
     height: '100vh',
-    backgroundColor: 'rgba(255, 0, 0, 0.3)',
+    backgroundColor: 'rgba(225, 6, 0, 0.3)',
     zIndex: 5,
     pointerEvents: 'none',
+    animation: 'flash 0.15s linear',
   },
 };
 
@@ -213,9 +220,11 @@ const BatakTest: React.FC<Props> = ({ onComplete }) => {
   if (phase === 'start') {
     return (
       <div style={styles.container}>
-        <h1 style={{ fontSize: '2.5rem', fontWeight: 'bold' }}>Batak</h1>
-        <p style={{ fontSize: '1rem', color: '#ccc', maxWidth: 500 }}>
-          Test your reflexes by clicking the circles as they light up. Choose a mode and get ready!
+        <h1 style={{ fontSize: '3rem', fontWeight: 300, color: '#e10600', textShadow: '0 0 10px #e10600' }}>
+          🏎️ Batak Reflex Test
+        </h1>
+        <p style={{ fontSize: '1.2rem', color: '#bbbbbb', marginTop: '12px', marginBottom: '24px', maxWidth: '500px' }}>
+          Choose your challenge mode and test your reactions under pressure. Tap the targets as fast and accurately as possible!
         </p>
         <select value={mode} onChange={(e) => setMode(e.target.value as Mode)} style={styles.select}>
           <option value="Classic">Classic</option>
@@ -223,10 +232,17 @@ const BatakTest: React.FC<Props> = ({ onComplete }) => {
           <option value="Sudden Death">Sudden Death</option>
           <option value="Acceleration">Acceleration</option>
         </select>
-        <button onClick={handleStart} style={styles.button}>Start</button>
+        <button
+          onClick={handleStart}
+          style={styles.button}
+          onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.05)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+        >
+          Start
+        </button>
       </div>
     );
-  }
+  }  
 
   if (phase === 'countdown') {
     return (
@@ -240,20 +256,43 @@ const BatakTest: React.FC<Props> = ({ onComplete }) => {
   if (phase === 'summary') {
     return (
       <div style={styles.container}>
-        <h2>🏁 Test Complete</h2>
-        <p>✅ Hits: {hits}</p>
-        <p>❌ Misses: {misses}</p>
-        <p>⏱️ Avg Reaction:{' '}
-          {reactionTimes.length > 0
-            ? `${Math.round(reactionTimes.reduce((a, b) => a + b, 0) / reactionTimes.length)} ms`
-            : 'N/A'}
-        </p>
-        <p>🎯 Accuracy: {(hits / (hits + misses || 1) * 100).toFixed(1)}%</p>
-        <p>🔥 Score: {score}</p>
-        <button onClick={handleSummaryClose} style={styles.button}>Continue</button>
+        <h1 style={{ fontSize: '2.5rem', fontWeight: 300, color: '#e10600', textShadow: '0 0 8px #e10600' }}>
+          🏁 Test Complete!
+        </h1>
+  
+        <div style={{
+          marginTop: '24px',
+          backgroundColor: '#1a1a1a',
+          padding: '20px 30px',
+          borderRadius: '12px',
+          boxShadow: '0 0 12px rgba(225, 6, 0, 0.5)',
+          width: '300px',
+          textAlign: 'left',
+          fontSize: '1.1rem',
+        }}>
+          <p>✅ Hits: <strong>{hits}</strong></p>
+          <p>❌ Misses: <strong>{misses}</strong></p>
+          <p>⏱️ Avg Reaction: <strong>
+            {reactionTimes.length > 0
+              ? `${Math.round(reactionTimes.reduce((a, b) => a + b, 0) / reactionTimes.length)} ms`
+              : 'N/A'}
+          </strong></p>
+          <p>🎯 Accuracy: <strong>{(hits / (hits + misses || 1) * 100).toFixed(1)}%</strong></p>
+          <p>🔥 Score: <strong>{score}</strong></p>
+        </div>
+  
+        <button
+          onClick={handleSummaryClose}
+          style={{ ...styles.button, marginTop: '32px', width: '220px' }}
+          onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.05)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+        >
+          Continue
+        </button>
       </div>
     );
   }
+  
 
   return (
     <div style={styles.container} onClick={handleMissClick}>
