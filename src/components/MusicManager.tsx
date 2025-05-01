@@ -8,7 +8,7 @@ import tennisBouncy from '../assets/Music/tennis-bouncy.mp3';
 import lightsFuturistic from '../assets/Music/lights-futuristic.mp3';
 import resultVictory from '../assets/Music/result-victory.mp3';
 import leaderboardVictory from '../assets/Music/leaderboard-victory.mp3';
-import transitionSting from '../assets/Sfx/transition-sting.mp3';
+import transitionSting from '../assets/Sfx/transition-explosion-121425.mp3';
 
 interface MusicManagerProps {
   step: string;

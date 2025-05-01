@@ -91,17 +91,22 @@ const LightsOutTest = ({ onComplete }: { onComplete: (score: number) => void }) 
     };
   }, []);
 
+  // ✅ Refactored waiting effect
   useEffect(() => {
     if (phase === 'waiting') {
       const delay = Math.random() * 3000 + 2000;
-      timeoutRef.current = setTimeout(() => {
+      const timeoutId = setTimeout(() => {
         setPhase('ready');
         setStartTime(Date.now());
       }, delay);
+      timeoutRef.current = timeoutId;
     }
 
     return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
     };
   }, [phase]);
 
@@ -170,7 +175,9 @@ const LightsOutTest = ({ onComplete }: { onComplete: (score: number) => void }) 
         return (
           <>
             <h2>🎬 Get Ready...</h2>
-            <F1StartLights key={trial} onLightsOutComplete={() => {console.log('[LightsOutTest] Lights finished, moving to waiting phase'); setPhase('waiting');}}/>
+            <F1StartLights key={trial} onLightsOutComplete={() => {
+              setPhase('waiting');
+            }} />
           </>
         );
 
@@ -191,16 +198,16 @@ const LightsOutTest = ({ onComplete }: { onComplete: (score: number) => void }) 
                   phase === 'waiting'
                     ? '#333'
                     : phase === 'ready'
-                    ? '#00c853'
-                    : '#d50000',
+                      ? '#00c853'
+                      : '#d50000',
                 color: phase === 'waiting' ? '#fff' : '#000',
               }}
             >
               {phase === 'waiting'
                 ? 'Wait for it...'
                 : phase === 'ready'
-                ? 'Click!'
-                : 'Too early!'}
+                  ? 'Click!'
+                  : 'Too early!'}
             </div>
           </>
         );
@@ -241,7 +248,10 @@ const LightsOutTest = ({ onComplete }: { onComplete: (score: number) => void }) 
   };
 
   return (
-    <div style = {styles.container} onClick={ ['waiting', 'ready', 'tooEarly'].includes(phase) ? handleClick : undefined} >
+    <div
+      style={styles.container}
+      onClick={['waiting', 'ready', 'tooEarly'].includes(phase) ? handleClick : undefined}
+    >
       {renderContent()}
     </div>
   );
