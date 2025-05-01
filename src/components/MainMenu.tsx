@@ -49,7 +49,7 @@ type MainMenuProps = {
 const MainMenu: React.FC<MainMenuProps> = ({ onStart, onViewLeaderboard }) => {
   return (
     <div style={styles.container}>
-      <h1 style={styles.title}>F1 Reaction Challenge</h1>
+      <h1 style={styles.title}>F1: LaunchBox</h1>
       <button
         style={styles.button}
         onMouseEnter={(e) => {
