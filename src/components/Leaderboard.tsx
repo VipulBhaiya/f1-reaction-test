@@ -96,7 +96,7 @@ const styles: { [key: string]: React.CSSProperties } = {
   wrapper: {
     position: 'fixed',
     top: 0, left: 0, right: 0, bottom: 0,
-    background: 'radial-gradient(circle at center, #1a1a1a 0%, #0e0e0e 80%)',
+    background: 'none',
     color: '#ffffff',
     display: 'flex',
     justifyContent: 'center',
@@ -110,10 +110,13 @@ const styles: { [key: string]: React.CSSProperties } = {
     borderRadius: '16px',
     padding: '24px',
     boxShadow: '0 0 20px #e10600aa',
-    width: '400px',
+    width: '90%',
+    maxWidth: '360px',
+    maxHeight: '80vh',         // ✅ restrict height
+    overflowY: 'auto',         // ✅ allow scroll if needed
     textAlign: 'center',
     zIndex: 2,
-  },
+  },  
   title: {
     fontSize: '2rem',
     color: '#e10600',
@@ -169,10 +172,13 @@ const styles: { [key: string]: React.CSSProperties } = {
     padding: '24px',
     borderRadius: '16px',
     boxShadow: '0 0 20px #00eaff88',
-    width: '320px',
+    width: '85%',
+    maxWidth: '300px',
+    maxHeight: '70vh',         // ✅ restrict height
+    overflowY: 'auto',         // ✅ scrollable if too much content
     zIndex: 1,
     color: '#ffffff',
-  },
+  },  
   statsTitle: {
     fontSize: '1.5rem',
     color: '#00eaff',

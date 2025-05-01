@@ -43,7 +43,7 @@ const styles = {
     left: 0,
     right: 0,
     bottom: 0,
-    background: 'radial-gradient(circle at center, #0e0e0e 0%, #000000 80%)',
+    background: 'none',
     overflow: 'hidden',
     display: 'flex',
     justifyContent: 'center',

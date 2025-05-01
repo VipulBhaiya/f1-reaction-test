@@ -114,7 +114,7 @@ const styles: { [key: string]: React.CSSProperties } = {
   wrapper: {
     position: 'fixed',
     top: 0, left: 0, right: 0, bottom: 0,
-    background: 'radial-gradient(circle at center, #1a1a1a 0%, #0e0e0e 80%)',
+    background: 'none',
     color: '#ffffff',
     fontFamily: "'Poppins', sans-serif",
     display: 'flex',

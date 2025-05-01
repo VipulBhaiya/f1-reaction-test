@@ -2,12 +2,11 @@ import React from 'react';
 
 const styles = {
   container: {
-    position: 'fixed' as const,  // Lock to viewport
+    position: 'fixed' as const,
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    background: 'radial-gradient(circle at center, #1a1a1a 0%, #0e0e0e 80%)',
     color: '#ffffff',
     display: 'flex',
     flexDirection: 'column' as const,
@@ -17,7 +16,8 @@ const styles = {
     textAlign: 'center' as const,
     gap: '24px',
     padding: '20px',
-    overflow: 'hidden',  // <- Prevent any accidental scroll
+    overflow: 'hidden',
+    zIndex: 1,
   },
   title: {
     fontSize: '3.5rem',

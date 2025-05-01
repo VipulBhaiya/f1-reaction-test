@@ -13,16 +13,17 @@ type Props = {
 
 const styles: { [key: string]: React.CSSProperties } = {
   container: {
-    position: 'fixed' as const,
+    position: 'fixed',
     top: 0, left: 0, right: 0, bottom: 0,
-    background: 'radial-gradient(circle at center, #1a1a1a 0%, #0e0e0e 80%)',
+    // background: 'radial-gradient(circle at center, #1a1a1a 0%, #0e0e0e 80%)', ❌ Removed
+    background: 'none', // ✅ Allows background effect to show
     color: '#ffffff',
     fontFamily: "'Poppins', sans-serif",
     display: 'flex',
-    flexDirection: 'column' as const,
+    flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    textAlign: 'center' as const,
+    textAlign: 'center',
     gap: 12,
     overflow: 'hidden',
   },

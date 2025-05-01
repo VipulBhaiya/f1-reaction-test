@@ -14,7 +14,6 @@ const styles = {
   container: {
     height: '100vh',
     width: '100vw',
-    background: 'radial-gradient(circle at center, #1a1a1a 0%, #0e0e0e 80%)',
     color: '#ffffff',
     fontFamily: "'Poppins', sans-serif",
     display: 'flex',
@@ -363,7 +362,7 @@ const TennisBallTest = ({ onComplete }: { onComplete: (score: number) => void })
             ? '#2e7d32'
             : flashColor === 'red'
             ? '#b71c1c'
-            : '#111',
+            : 'transparent',
         transition: 'background-color 0.3s ease',
       }}
     >

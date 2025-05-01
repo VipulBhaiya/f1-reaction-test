@@ -16,13 +16,14 @@ const styles = {
     width: 28,
     height: 28,
     borderRadius: '50%',
-    backgroundColor: '#333',
-    transition: 'background-color 0.3s ease',
+    backgroundColor: '#1a1a1a',
     boxShadow: '0 0 6px #000',
+    transition: 'background-color 0.3s ease, transform 0.2s ease',
   },
   lit: {
-    backgroundColor: '#ff1c1c',
-    boxShadow: '0 0 12px 4px rgba(255, 0, 0, 0.6)',
+    backgroundColor: '#e10600',
+    boxShadow: '0 0 16px 6px rgba(225, 6, 0, 0.65)',
+    transform: 'scale(1.2)',
   },
 };
 
@@ -39,26 +40,37 @@ const F1StartLights: React.FC<Props> = ({
 }) => {
   const [litCount, setLitCount] = useState(0);
   const [lightsOut, setLightsOut] = useState(false);
+  const isMounted = useRef(true); // Track mount state
+  const completed = useRef(false); // Prevent double-calling onComplete
 
   const tickAudio = useRef(new Audio(tickSfx));
   const goAudio = useRef(new Audio(goSfx));
 
   useEffect(() => {
+    isMounted.current = true;
+
     if (litCount < 5) {
       const timer = setTimeout(() => {
+        if (!isMounted.current) return;
         tickAudio.current.currentTime = 0;
         tickAudio.current.play();
         setLitCount((c) => c + 1);
       }, delayPerLight);
       return () => clearTimeout(timer);
-    } else {
+    } else if (!completed.current) {
       const hold = setTimeout(() => {
+        if (!isMounted.current) return;
         setLightsOut(true);
         goAudio.current.play();
+        completed.current = true;
         onComplete();
       }, holdDuration);
       return () => clearTimeout(hold);
     }
+
+    return () => {
+      isMounted.current = false;
+    };
   }, [litCount, delayPerLight, holdDuration, onComplete]);
 
   return (

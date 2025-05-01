@@ -11,6 +11,7 @@ import MainMenu from './components/MainMenu';
 import SimIntro from './components/SimIntro';
 import TransitionScreen from './components/TransitionScreen';
 import MusicManager from './components/MusicManager';
+import ParticlesBackground from './components/ParticlesBackground';
 
 /** Step Types */
 type Step =
@@ -31,10 +32,10 @@ const App = () => {
   const [scores, setScores] = useState<number[]>([]);
   const [devMode, setDevMode] = useState(false);
 
-  /** Toggle Dev Mode on 'D' key press */
+  /** Toggle Dev Mode on '2' key press */
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
-      if (e.key.toLowerCase() === 'd') {
+      if (e.key.toLowerCase() === '2') {
         setDevMode((prev) => !prev);
       }
     };
@@ -53,19 +54,26 @@ const App = () => {
   /** Handle game completion */
   const handleComplete = useCallback((score: number) => {
     setScores((prev) => [...prev, score]);
-    if (!devMode) {
-      switch (step) {
-        case 'batak':
-          goToStep('tennis', 'Next Up: Tennis Ball Catch');
-          break;
-        case 'tennis':
-          goToStep('lights', 'Final Test: Lights Out');
-          break;
-        case 'lights':
-          goToStep('result', 'Calculating Results...', 1400);
-          break;
-      }
+
+    if (devMode) {
+      console.log(`[DevMode] Score recorded: ${score}. Manual step control active.`);
+      return;
     }
+
+    const transitions: Record<Step, () => void> = {
+      batak: () => goToStep('tennis', 'Next Up: Tennis Ball Catch'),
+      tennis: () => goToStep('lights', 'Final Test: Lights Out'),
+      lights: () => goToStep('result', 'Calculating Results...', 1400),
+      'main-menu': () => {},
+      'sim-intro': () => {},
+      result: () => {},
+      leaderboard: () => {},
+      transition: () => {},
+    };
+
+    const transitionFn = transitions[step];
+    if (transitionFn) transitionFn();
+    else console.warn(`[handleComplete] No transition defined for step: ${step}`);
   }, [devMode, step, goToStep]);
 
   /** Restart entire simulation */
@@ -151,12 +159,15 @@ const App = () => {
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-black text-white">
+      {/* Particle Background */}
+      <ParticlesBackground />
+
       {/* Floating Music Manager */}
       <div className="absolute bottom-6 right-6 z-30">
         <MusicManager step={step} />
       </div>
 
-      {/* Dev Mode (press D to toggle) */}
+      {/* Dev Mode (press 2 to toggle) */}
       {devMode && (
         <DevMenu
           currentStep={step}

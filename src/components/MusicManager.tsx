@@ -73,7 +73,7 @@ const MusicManager = ({ step }: MusicManagerProps) => {
 
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
-      if (e.key.toLowerCase() === 'm') {
+      if (e.key.toLowerCase() === '1') {
         toggleMusic();
       }
     };

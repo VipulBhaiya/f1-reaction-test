@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import F1StartLights from '../components/F1StartLights';
 
-// Importing sound effects
 import goSfx from '../assets/Sfx/go.mp3';
 import successSfx from '../assets/Sfx/hit.mp3';
 import errorSfx from '../assets/Sfx/miss.mp3';
@@ -11,39 +10,60 @@ const MAX_LIGHT_TIME = 1000;
 
 const styles = {
   container: {
-    height: '100vh',
+    minHeight: '100dvh',
     width: '100vw',
-    backgroundColor: '#121212',
-    color: 'white',
+    color: '#ffffff',
+    fontFamily: "'Poppins', sans-serif",
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
     flexDirection: 'column' as const,
-    fontFamily: 'sans-serif',
     textAlign: 'center' as const,
+    overflow: 'hidden',
+    gap: '16px',
+    padding: '24px',
+    boxSizing: 'border-box',
+    margin: 0,
   },
   box: {
-    width: '80%',
-    maxWidth: '400px',
-    height: '200px',
-    borderRadius: '16px',
+    width: '300px',
+    height: '160px',
+    borderRadius: '20px',
     backgroundColor: '#444',
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
-    fontSize: '24px',
+    fontSize: '1.8rem',
+    fontWeight: 600,
     cursor: 'pointer',
     userSelect: 'none' as const,
-    marginTop: '20px',
+    transition: 'all 0.3s ease',
+    boxShadow: '0 0 20px rgba(255, 255, 255, 0.1)',
   },
   button: {
-    padding: '10px 20px',
-    fontSize: '1rem',
-    borderRadius: '8px',
-    backgroundColor: '#ffc107',
-    border: 'none',
+    padding: '14px 32px',
+    fontSize: '1.2rem',
+    borderRadius: '12px',
+    backgroundColor: '#e10600',
+    border: '2px solid #e10600',
+    color: '#ffffff',
+    fontWeight: 'bold',
     cursor: 'pointer',
-    marginTop: '20px',
+    transition: 'all 0.3s ease',
+    marginTop: '12px',
+  },
+  title: {
+    fontSize: '2.5rem',
+    fontWeight: 300,
+    color: '#e10600',
+    textShadow: '0 0 10px #e10600',
+    marginBottom: '8px',
+  },
+  subtitle: {
+    fontSize: '1.2rem',
+    color: '#bbbbbb',
+    maxWidth: '480px',
+    marginBottom: '16px',
   },
 };
 
@@ -58,10 +78,18 @@ const LightsOutTest = ({ onComplete }: { onComplete: (score: number) => void }) 
   const [startTime, setStartTime] = useState<number | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Initialize Audio objects
   const goAudio = useRef(new Audio(goSfx));
   const successAudio = useRef(new Audio(successSfx));
   const errorAudio = useRef(new Audio(errorSfx));
+
+  useEffect(() => {
+    document.body.style.margin = '0';
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.margin = '';
+      document.body.style.overflow = '';
+    };
+  }, []);
 
   useEffect(() => {
     if (phase === 'waiting') {
@@ -78,9 +106,7 @@ const LightsOutTest = ({ onComplete }: { onComplete: (score: number) => void }) 
   }, [phase]);
 
   useEffect(() => {
-    if (phase === 'ready') {
-      goAudio.current.play();
-    }
+    if (phase === 'ready') goAudio.current.play();
   }, [phase]);
 
   const handleClick = () => {
@@ -90,26 +116,19 @@ const LightsOutTest = ({ onComplete }: { onComplete: (score: number) => void }) 
       setHits((h) => h + 1);
       successAudio.current.play();
       setStartTime(null);
-      if (trial + 1 >= TRIALS) {
-        setPhase('summary');
-      } else {
-        setTrial((t) => t + 1);
-        setPhase('waiting');
-      }
+      trial + 1 >= TRIALS ? setPhase('summary') : nextTrial();
     } else if (phase === 'waiting') {
       setMisses((m) => m + 1);
       navigator.vibrate?.(200);
       errorAudio.current.play();
       setPhase('tooEarly');
-      setTimeout(() => {
-        if (trial + 1 >= TRIALS) {
-          setPhase('summary');
-        } else {
-          setTrial((t) => t + 1);
-          setPhase('waiting');
-        }
-      }, 1000);
+      setTimeout(() => (trial + 1 >= TRIALS ? setPhase('summary') : nextTrial()), 1000);
     }
+  };
+
+  const nextTrial = () => {
+    setTrial((t) => t + 1);
+    setPhase('waiting');
   };
 
   const startTest = () => {
@@ -125,12 +144,6 @@ const LightsOutTest = ({ onComplete }: { onComplete: (score: number) => void }) 
   const accuracy = hits / (hits + misses || 1);
   const score = (accuracy * 65) + (35 * (1 - Math.min(avgTimePerLight, MAX_LIGHT_TIME) / MAX_LIGHT_TIME));
 
-  useEffect(() => {
-    if (phase === 'summary') {
-      onComplete(Math.round(score));
-    }
-  }, [phase]);
-
   const renderContent = () => {
     const showTrial = ['waiting', 'ready', 'tooEarly'].includes(phase);
 
@@ -138,20 +151,29 @@ const LightsOutTest = ({ onComplete }: { onComplete: (score: number) => void }) 
       case 'start':
         return (
           <>
-            <h2>Lights Out Reaction Test</h2>
-            <p>Click when the screen turns green. Don’t click too early!</p>
-            <button style={styles.button} onClick={startTest}>
+            <h1 style={styles.title}>💡 Lights Out Reflex Test</h1>
+            <p style={styles.subtitle}>
+              Click when the box turns green. Don't click too early!
+            </p>
+            <button
+              style={styles.button}
+              onClick={startTest}
+              onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(1.05)')}
+              onMouseLeave={(e) => (e.currentTarget.style.transform = 'scale(1)')}
+            >
               Ready
             </button>
           </>
         );
+
       case 'countdown':
         return (
           <>
             <h2>🎬 Get Ready...</h2>
-            <F1StartLights onComplete={() => setPhase('waiting')} />
+            <F1StartLights key={trial} onLightsOutComplete={() => {console.log('[LightsOutTest] Lights finished, moving to waiting phase'); setPhase('waiting');}}/>
           </>
         );
+
       case 'waiting':
       case 'ready':
       case 'tooEarly':
@@ -167,10 +189,11 @@ const LightsOutTest = ({ onComplete }: { onComplete: (score: number) => void }) 
                 ...styles.box,
                 backgroundColor:
                   phase === 'waiting'
-                    ? '#555'
+                    ? '#333'
                     : phase === 'ready'
-                    ? 'green'
-                    : 'red',
+                    ? '#00c853'
+                    : '#d50000',
+                color: phase === 'waiting' ? '#fff' : '#000',
               }}
             >
               {phase === 'waiting'
@@ -181,17 +204,36 @@ const LightsOutTest = ({ onComplete }: { onComplete: (score: number) => void }) 
             </div>
           </>
         );
+
       case 'summary':
         return (
           <>
-            <h2>🏁 Test Summary</h2>
-            <p>✅ Hits: {hits}</p>
-            <p>❌ Misses: {misses}</p>
-            <p>⏱️ Avg Reaction: {Math.round(avgTimePerLight)} ms</p>
-            <p>🎯 Accuracy: {(accuracy * 100).toFixed(1)}%</p>
-            <h3>🔥 Score: {Math.round(score)}</h3>
-            <button style={styles.button} onClick={() => setPhase('start')}>
-              Restart
+            <h1 style={styles.title}>🏁 Test Complete!</h1>
+            <div
+              style={{
+                marginTop: '24px',
+                backgroundColor: '#1a1a1a',
+                padding: '20px 30px',
+                borderRadius: '12px',
+                boxShadow: '0 0 12px rgba(225, 6, 0, 0.5)',
+                width: '300px',
+                textAlign: 'left',
+                fontSize: '1.1rem',
+              }}
+            >
+              <p>✅ Hits: <strong>{hits}</strong></p>
+              <p>❌ Misses: <strong>{misses}</strong></p>
+              <p>⏱️ Avg Reaction: <strong>{Math.round(avgTimePerLight)} ms</strong></p>
+              <p>🎯 Accuracy: <strong>{(accuracy * 100).toFixed(1)}%</strong></p>
+              <p>🔥 Score: <strong>{Math.round(score)}</strong></p>
+            </div>
+            <button
+              style={{ ...styles.button, marginTop: '32px', width: '220px' }}
+              onClick={() => onComplete(Math.round(score))}
+              onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(1.05)')}
+              onMouseLeave={(e) => (e.currentTarget.style.transform = 'scale(1)')}
+            >
+              Next
             </button>
           </>
         );
@@ -199,7 +241,7 @@ const LightsOutTest = ({ onComplete }: { onComplete: (score: number) => void }) 
   };
 
   return (
-    <div style={styles.container} onClick={handleClick}>
+    <div style = {styles.container} onClick={ ['waiting', 'ready', 'tooEarly'].includes(phase) ? handleClick : undefined} >
       {renderContent()}
     </div>
   );
