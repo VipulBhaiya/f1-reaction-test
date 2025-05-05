@@ -222,7 +222,7 @@ const BatakTest: React.FC<Props> = ({ onComplete }) => {
     return (
       <div style={styles.container}>
         <h1 style={{ fontSize: '3rem', fontWeight: 300, color: '#e10600', textShadow: '0 0 10px #e10600' }}>
-          🏎️ Batak Reflex Test
+        🔴 Batak Reflex Test
         </h1>
         <p style={{ fontSize: '1.2rem', color: '#bbbbbb', marginTop: '12px', marginBottom: '24px', maxWidth: '500px' }}>
           Choose your challenge mode and test your reactions under pressure. Tap the targets as fast and accurately as possible!

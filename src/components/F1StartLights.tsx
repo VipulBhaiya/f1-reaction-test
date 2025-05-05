@@ -81,7 +81,7 @@ const F1StartLights: React.FC<Props> = ({
           style={{
             ...styles.light,
             ...(litCount > i && !lightsOut ? styles.lit : {}),
-          }}
+          }} 
         />
       ))}
     </div>

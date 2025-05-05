@@ -9,6 +9,14 @@ const TRIALS = 5;
 const MAX_LIGHT_TIME = 1000;
 
 const styles = {
+  wrapper: {
+    position: 'relative' as const,
+    zIndex: 10,
+    overflow: 'hidden',
+    minHeight: '100dvh',
+    width: '100vw',
+    background: 'transparent',
+  },
   container: {
     minHeight: '100dvh',
     width: '100vw',
@@ -24,6 +32,8 @@ const styles = {
     padding: '24px',
     boxSizing: 'border-box',
     margin: 0,
+    position: 'relative' as const,
+    zIndex: 20,
   },
   box: {
     width: '300px',
@@ -53,7 +63,7 @@ const styles = {
     marginTop: '12px',
   },
   title: {
-    fontSize: '2.5rem',
+    fontSize: '3rem',
     fontWeight: 300,
     color: '#e10600',
     textShadow: '0 0 10px #e10600',
@@ -83,15 +93,14 @@ const LightsOutTest = ({ onComplete }: { onComplete: (score: number) => void }) 
   const errorAudio = useRef(new Audio(errorSfx));
 
   useEffect(() => {
-    document.body.style.margin = '0';
-    document.body.style.overflow = 'hidden';
+    // Removed document.body.style mutations to avoid side effects
     return () => {
-      document.body.style.margin = '';
-      document.body.style.overflow = '';
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
     };
   }, []);
 
-  // ✅ Refactored waiting effect
   useEffect(() => {
     if (phase === 'waiting') {
       const delay = Math.random() * 3000 + 2000;
@@ -175,7 +184,7 @@ const LightsOutTest = ({ onComplete }: { onComplete: (score: number) => void }) 
         return (
           <>
             <h2>🎬 Get Ready...</h2>
-            <F1StartLights key={trial} onLightsOutComplete={() => {
+            <F1StartLights key={trial} onComplete={() => {
               setPhase('waiting');
             }} />
           </>
@@ -248,11 +257,13 @@ const LightsOutTest = ({ onComplete }: { onComplete: (score: number) => void }) 
   };
 
   return (
-    <div
-      style={styles.container}
-      onClick={['waiting', 'ready', 'tooEarly'].includes(phase) ? handleClick : undefined}
-    >
-      {renderContent()}
+    <div style={styles.wrapper}>
+      <div
+        style={styles.container}
+        onClick={['waiting', 'ready', 'tooEarly'].includes(phase) ? handleClick : undefined}
+      >
+        {renderContent()}
+      </div>
     </div>
   );
 };

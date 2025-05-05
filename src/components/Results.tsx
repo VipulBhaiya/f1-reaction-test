@@ -155,18 +155,21 @@ const styles: { [key: string]: React.CSSProperties } = {
     marginTop: '24px',
     display: 'flex',
     flexDirection: 'column',
+    alignItems: 'center', // 🔥 This centers children horizontally
     gap: '12px',
-  },
+    width: '100%',
+  },  
   input: {
     padding: '10px',
     fontSize: '1rem',
     borderRadius: '8px',
-    width: '100%',
+    width: '80%', // ✅ instead of 100%
+    maxWidth: '300px',
     border: '1px solid #555',
     backgroundColor: '#1a1a1a',
     color: '#ffffff',
     outline: 'none',
-  },
+  },  
   mainButton: {
     backgroundColor: '#e10600',
     color: '#ffffff',
