@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import F1StartLights from '../components/F1StartLights';
 
 import goSfx from '../assets/Sfx/go.mp3';
@@ -30,7 +30,7 @@ const styles = {
     overflow: 'hidden',
     gap: '16px',
     padding: '24px',
-    boxSizing: 'border-box',
+    boxSizing: 'border-box' as const,
     margin: 0,
     position: 'relative' as const,
     zIndex: 20,

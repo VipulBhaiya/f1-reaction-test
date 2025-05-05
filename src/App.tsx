@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 import BatakTest from './games/BatakTest';
@@ -24,6 +24,13 @@ type Step =
   | 'leaderboard'
   | 'transition';
 
+/** Narrowed Step Types */
+type GameStep = 'batak' | 'tennis' | 'lights' | 'result' | 'leaderboard';
+
+/** Type guard to narrow a Step to GameStep */
+const isGameStep = (s: Step): s is GameStep =>
+  ['batak', 'tennis', 'lights', 'result', 'leaderboard'].includes(s);
+
 const App = () => {
   const [step, setStep] = useState<Step>('main-menu');
   const [nextStep, setNextStep] = useState<Step | null>(null);
@@ -32,7 +39,6 @@ const App = () => {
   const [scores, setScores] = useState<number[]>([]);
   const [devMode, setDevMode] = useState(false);
 
-  /** Toggle Dev Mode on '2' key press */
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
       if (e.key.toLowerCase() === '2') {
@@ -43,7 +49,6 @@ const App = () => {
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, []);
 
-  /** Navigate to a step via TransitionScreen */
   const goToStep = useCallback((target: Step, message: string, duration = 1600) => {
     setTransitionMessage(message);
     setNextStep(target);
@@ -51,7 +56,6 @@ const App = () => {
     setStep('transition');
   }, []);
 
-  /** Handle game completion */
   const handleComplete = useCallback((score: number) => {
     setScores((prev) => [...prev, score]);
 
@@ -76,13 +80,11 @@ const App = () => {
     else console.warn(`[handleComplete] No transition defined for step: ${step}`);
   }, [devMode, step, goToStep]);
 
-  /** Restart entire simulation */
   const handleRestart = useCallback(() => {
     setScores([]);
     setStep('main-menu');
   }, []);
 
-  /** Animation fade preset */
   const fade = {
     initial: { opacity: 0 },
     animate: { opacity: 1 },
@@ -90,7 +92,6 @@ const App = () => {
     transition: { duration: 1.2, ease: 'easeInOut' },
   };
 
-  /** Render the current Step component */
   const renderStep = () => {
     switch (step) {
       case 'main-menu':
@@ -164,13 +165,13 @@ const App = () => {
 
       {/* Floating Music Manager */}
       <div className="absolute bottom-6 right-6 z-30">
-        <MusicManager step={step} />
+        <MusicManager step={isGameStep(step) ? step : 'batak'} />
       </div>
 
       {/* Dev Mode (press 2 to toggle) */}
       {devMode && (
         <DevMenu
-          currentStep={step}
+          currentStep={isGameStep(step) ? step : 'batak'}
           onSelectTest={(target) => setStep(target)}
           onExitDevMode={() => setDevMode(false)}
         />

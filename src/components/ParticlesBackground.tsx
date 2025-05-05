@@ -34,7 +34,9 @@ const ParticlesBackground: React.FC = () => {
           enable: true,
           mode: "trail",
         },
-        resize: true,
+        resize:{
+          enable: true
+        },
       },
       modes: {
         trail: {
