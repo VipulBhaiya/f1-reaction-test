@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import F1StartLights from '../components/F1StartLights';
-import hitSound from '../assets/sfx/hit.mp3';
-import missSound from '../assets/sfx/miss.mp3';
-import suddenDeathMissSound from '../assets/sfx/sudden-death-miss.mp3';
-import lightUpSound from '../assets/sfx/light-up.mp3';
+import hitSound from '../assets/Sfx/hit.mp3';
+import missSound from '../assets/Sfx/miss.mp3';
+import suddenDeathMissSound from '../assets/Sfx/sudden-death-miss.mp3';
+import lightUpSound from '../assets/Sfx/light-up.mp3';
 
 type Mode = 'Classic' | 'Speed' | 'Sudden Death' | 'Acceleration';
 

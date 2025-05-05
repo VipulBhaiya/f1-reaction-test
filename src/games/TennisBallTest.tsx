@@ -3,9 +3,9 @@ import { motion } from 'framer-motion';
 import F1StartLights from '../components/F1StartLights';
 
 // SFX imports
-import catchSound from '../assets/sfx/hit.mp3';
-import missSound from '../assets/sfx/miss.mp3';
-import fallingSound from '../assets/sfx/falling.mp3';
+import catchSound from '../assets/Sfx/hit.mp3';
+import missSound from '../assets/Sfx/miss.mp3';
+import fallingSound from '../assets/Sfx/falling.mp3';
 
 const TRIALS = 5;
 const MAX_REACTION_TIME = 1000;
